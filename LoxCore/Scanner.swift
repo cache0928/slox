@@ -72,6 +72,8 @@ public final class Scanner {
           while currentCharacter != "\n" && !isAtEnd {
             advanceIndex()
           }
+        } else if (match(expected: "*")) {
+          try scanCStyleComments()
         } else {
           addToken(type: .SLASH)
         }
@@ -153,6 +155,24 @@ public final class Scanner {
     let str = String(source[tokenStartIndex ..< currentScanIndex])
     let tokenType = keywords[str] ?? .IDENTIFIER
     addToken(type: tokenType)
+  }
+  
+  private func scanCStyleComments() throws {
+    while currentCharacter != "*" && !isAtEnd {
+      if currentCharacter == "\n" {
+        line += 1
+      }
+      advanceIndex()
+    }
+    guard !isAtEnd else {
+      throw LoxError.unterminatedComment(line: line, message: "Unterminated comment")
+    }
+    advanceIndex()
+    if match(expected: "/") {
+      return
+    } else {
+      try scanCStyleComments()
+    }
   }
   
   private func addToken(type: TokenType, literal: Any? = nil) {

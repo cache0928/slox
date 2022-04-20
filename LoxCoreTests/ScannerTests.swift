@@ -159,5 +159,11 @@ class ScannerTests: XCTestCase {
     XCTAssertEqual(result.map{$0.type}, [.VAR, .IDENTIFIER, .EQUAL, .NUMBER, .EOF])
   }
   
+  func testCStyleComments() {
+    let result = try! getScanResult(source: "/*\n***some comments***\n*/")
+    XCTAssertEqual(.EOF, result.first?.type)
+    XCTAssertEqual(3, result.first?.line)
+    XCTAssertThrowsError(try getScanResult(source: "/*\nsome comments\n*"))
+  }
 }
 

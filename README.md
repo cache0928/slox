@@ -6,16 +6,16 @@
 
 编程原理是计算机科学中举足轻重的一部分，动手做应该是学习某项知识最重要的环节。
 
-# 实现
+## 实现
 
 我会尽量**参照书中所示的Java代码结构来实现**
 
 但是Swift本身有太多优秀和新奇的特点，比如`guard`、`Optional`等，我也会使用这些Swift独占特性，但整体的结构和逻辑应该和书本上的并无太大差异
 
-## To-Do
+### To-Do
 
 - [x] 4.  [**Scanning**](http://www.craftinginterpreters.com/scanning.html)
-  - [ ] Challenge 4: C-style /* ... */ block comments.
+  - [x] Challenge 4: C-style /* ... */ block comments.
 
 - [ ] 5.  [**Representing Code**](http://www.craftinginterpreters.com/representing-code.html)
   - [ ] Challenge 3: AST Printer In Reverse Polish Notation.
@@ -54,11 +54,11 @@
   - [ ] Challenge 1: Multiple inheritance. *Nothing to implement...?*
   - [ ] Challenge 2: Reverse method lookup order in class hierarchy.
 
-# 测试
+## 测试
 
 我尽量使用TDD的思想来开发每个阶段，所以Xcode工程中包含了使用`XCTest`实现的单元测试文件。
 
-# 工程结构
+## 工程结构
 
 使用 [SPM](https://github.com/apple/swift-package-manager/) 来管理frameworks、依赖文件
 
