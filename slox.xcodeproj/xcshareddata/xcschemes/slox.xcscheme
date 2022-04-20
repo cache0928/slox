@@ -52,7 +52,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "--source-file ~/Documents/Lox/test.lox"
+            argument = "--source-file ~/Documents/Lox\ Source\ Files/test.lox1"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
