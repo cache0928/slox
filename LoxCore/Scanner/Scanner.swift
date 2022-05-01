@@ -7,25 +7,6 @@
 
 import Foundation
 
-private let keywords: [String: TokenType] = [
-  "and": .AND,
-  "class": .CLASS,
-  "else": .ELSE,
-  "false": .FALSE,
-  "for": .FOR,
-  "fun": .FUN,
-  "if": .IF,
-  "nil": .NIL,
-  "or": .OR,
-  "print": .PRINT,
-  "return": .RETURN,
-  "super": .SUPER,
-  "this": .THIS,
-  "true": .TRUE,
-  "var": .VAR,
-  "while": .WHILE
-]
-
 public final class Scanner {
   let source: String
   private var tokens: [Token] = []
@@ -52,20 +33,11 @@ public final class Scanner {
       return
     }
     switch c {
-      case "(": addToken(type: .LEFT_PAREN)
-      case ")": addToken(type: .RIGHT_PAREN)
-      case "{": addToken(type: .LEFT_BRACE)
-      case "}": addToken(type: .RIGHT_BRACE)
-      case ",": addToken(type: .COMMA)
-      case ".": addToken(type: .DOT)
-      case "-": addToken(type: .MINUS)
-      case "+": addToken(type: .PLUS)
-      case ";": addToken(type: .SEMICOLON)
-      case "*": addToken(type: .STAR)
-      case "!": addToken(type: match(expected: "=") ? .BANG_EQUAL : .BANG)
-      case "=": addToken(type: match(expected: "=") ? .EQUAL_EQUAL : .EQUAL)
-      case "<": addToken(type: match(expected: "=") ? .LESS_EQUAL : .LESS)
-      case ">": addToken(type: match(expected: "=") ? .GREATER_EQUAL : .GREATER)
+      case "(",")","{","}",",",".","-","+",";","*": addToken(type: String(c).tokenType!)
+      case "!": addToken(type: match(expected: "=") ? "!=".tokenType! : "!".tokenType!)
+      case "=": addToken(type: match(expected: "=") ? "==".tokenType! : "=".tokenType!)
+      case "<": addToken(type: match(expected: "=") ? "<=".tokenType! : "<".tokenType!)
+      case ">": addToken(type: match(expected: "=") ? ">=".tokenType! : ">".tokenType!)
       case "/":
         if (match(expected: "/")) {
           // 是注释的话直接消耗整行
@@ -75,7 +47,7 @@ public final class Scanner {
         } else if (match(expected: "*")) {
           try scanCStyleComments()
         } else {
-          addToken(type: .SLASH)
+          addToken(type: "/".tokenType!)
         }
       case "\"": try scanString()
       default:
@@ -153,7 +125,7 @@ public final class Scanner {
       advanceIndex()
     }
     let str = String(source[tokenStartIndex ..< currentScanIndex])
-    let tokenType = keywords[str] ?? .IDENTIFIER
+    let tokenType = str.tokenType ?? .IDENTIFIER
     addToken(type: tokenType)
   }
   
@@ -175,7 +147,7 @@ public final class Scanner {
     }
   }
   
-  private func addToken(type: TokenType, literal: Any? = nil) {
+  private func addToken(type: TokenType, literal: AnyLiteral? = nil) {
     let text = source[tokenStartIndex ..< currentScanIndex]
     tokens.append(Token(type: type, lexeme: String(text), line: line, literal: literal))
   }

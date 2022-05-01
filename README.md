@@ -10,14 +10,14 @@
 
 我会尽量**参照书中所示的Java代码结构来实现**
 
-但是Swift本身有太多优秀和新奇的特点，比如`guard`、`Optional`等，我也会使用这些Swift独占特性，但整体的结构和逻辑应该和书本上的并无太大差异
+但是Swift本身有太多优秀和新奇的特点，比如`guard`、`Optional`、`POP`等，我也会使用这些Swift独占特性，但整体的结构和逻辑应该和书本上的并无太大差异
 
 ### To-Do
 
 - [x] 4.  [**Scanning**](http://www.craftinginterpreters.com/scanning.html)
   - [x] Challenge 4: C-style /* ... */ block comments.
 
-- [ ] 5.  [**Representing Code**](http://www.craftinginterpreters.com/representing-code.html)
+- [x] 5.  [**Representing Code**](http://www.craftinginterpreters.com/representing-code.html)
   - [ ] Challenge 3: AST Printer In Reverse Polish Notation.
   - [ ] GenerateAst tool
   
