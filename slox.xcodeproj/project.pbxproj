@@ -7,11 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		C90620BA281BD13B003BC427 /* String+TokenType.swift in Sources */ = {isa = PBXBuildFile; fileRef = C90620B9281BD13B003BC427 /* String+TokenType.swift */; };
 		C90620BE281BD7FF003BC427 /* Expression.swift in Sources */ = {isa = PBXBuildFile; fileRef = C90620BD281BD7FF003BC427 /* Expression.swift */; };
 		C9DE51F828046FEA0042FB64 /* ArgumentParser in Frameworks */ = {isa = PBXBuildFile; productRef = C9DE51F728046FEA0042FB64 /* ArgumentParser */; };
 		C9EBEE55281E5AF100CD3F3F /* ParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9EBEE54281E5AF100CD3F3F /* ParserTests.swift */; };
 		C9EBEE59281E5FC100CD3F3F /* Expression+Description.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9EBEE58281E5FC100CD3F3F /* Expression+Description.swift */; };
+		C9EBEE5B281F793500CD3F3F /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9EBEE5A281F793500CD3F3F /* Parser.swift */; };
+		C9EBEE5D281F849B00CD3F3F /* AnyLiteral.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9EBEE5C281F849B00CD3F3F /* AnyLiteral.swift */; };
 		C9EFD96C280D4F740032F484 /* slox.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9EFD96B280D4F740032F484 /* slox.swift */; };
 		C9EFD9A2280D53B50032F484 /* LoxCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9EFD99A280D53B50032F484 /* LoxCore.framework */; };
 		C9EFD9A8280D53B50032F484 /* LoxCore.h in Headers */ = {isa = PBXBuildFile; fileRef = C9EFD99C280D53B50032F484 /* LoxCore.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -66,12 +67,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		C90620B9281BD13B003BC427 /* String+TokenType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+TokenType.swift"; sourceTree = "<group>"; };
 		C90620BD281BD7FF003BC427 /* Expression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Expression.swift; sourceTree = "<group>"; };
 		C93208C2280429C7009B849C /* slox */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = slox; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9EBEE4F280DA96F00CD3F3F /* Lox Source Files */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "Lox Source Files"; path = "../../../../../Documents/Lox Source Files"; sourceTree = "<group>"; };
 		C9EBEE54281E5AF100CD3F3F /* ParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParserTests.swift; sourceTree = "<group>"; };
 		C9EBEE58281E5FC100CD3F3F /* Expression+Description.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Expression+Description.swift"; sourceTree = "<group>"; };
+		C9EBEE5A281F793500CD3F3F /* Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
+		C9EBEE5C281F849B00CD3F3F /* AnyLiteral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnyLiteral.swift; sourceTree = "<group>"; };
 		C9EFD96B280D4F740032F484 /* slox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = slox.swift; sourceTree = "<group>"; };
 		C9EFD99A280D53B50032F484 /* LoxCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = LoxCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9EFD99C280D53B50032F484 /* LoxCore.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LoxCore.h; sourceTree = "<group>"; };
@@ -115,10 +117,10 @@
 		C90620BB281BD7DA003BC427 /* Scanner */ = {
 			isa = PBXGroup;
 			children = (
-				C9EBEE56281E5F9500CD3F3F /* Extensions */,
 				C9EFD9B1280D53C80032F484 /* Scanner.swift */,
 				C9EFD9AF280D53C80032F484 /* Token.swift */,
 				C9EFD9B0280D53C80032F484 /* TokenType.swift */,
+				C9EBEE5C281F849B00CD3F3F /* AnyLiteral.swift */,
 			);
 			path = Scanner;
 			sourceTree = "<group>";
@@ -128,6 +130,7 @@
 			children = (
 				C9EBEE57281E5FA800CD3F3F /* Extensions */,
 				C90620BD281BD7FF003BC427 /* Expression.swift */,
+				C9EBEE5A281F793500CD3F3F /* Parser.swift */,
 			);
 			path = Parser;
 			sourceTree = "<group>";
@@ -160,14 +163,6 @@
 				C9EFD96B280D4F740032F484 /* slox.swift */,
 			);
 			path = slox;
-			sourceTree = "<group>";
-		};
-		C9EBEE56281E5F9500CD3F3F /* Extensions */ = {
-			isa = PBXGroup;
-			children = (
-				C90620B9281BD13B003BC427 /* String+TokenType.swift */,
-			);
-			path = Extensions;
 			sourceTree = "<group>";
 		};
 		C9EBEE57281E5FA800CD3F3F /* Extensions */ = {
@@ -363,10 +358,11 @@
 			files = (
 				C9EFD9C4280FEF1E0032F484 /* Character+.swift in Sources */,
 				C9EFD9C1280D657C0032F484 /* Error.swift in Sources */,
-				C90620BA281BD13B003BC427 /* String+TokenType.swift in Sources */,
 				C9EBEE59281E5FC100CD3F3F /* Expression+Description.swift in Sources */,
 				C90620BE281BD7FF003BC427 /* Expression.swift in Sources */,
+				C9EBEE5B281F793500CD3F3F /* Parser.swift in Sources */,
 				C9EFD9B4280D53C80032F484 /* Token.swift in Sources */,
+				C9EBEE5D281F849B00CD3F3F /* AnyLiteral.swift in Sources */,
 				C9EFD9B6280D53C80032F484 /* Scanner.swift in Sources */,
 				C9EFD9B5280D53C80032F484 /* TokenType.swift in Sources */,
 			);

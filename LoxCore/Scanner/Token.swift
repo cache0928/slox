@@ -7,22 +7,6 @@
 
 import Foundation
 
-protocol AnyLiteral: CustomStringConvertible {
-  
-}
-
-extension String: AnyLiteral {
-  var description: String {
-    return self
-  }
-}
-
-extension Double: AnyLiteral {
-  var description: String {
-    return String(self)
-  }
-}
-
 public struct Token: CustomStringConvertible {
   
   init(type: TokenType, lexeme: String, line: Int, literal: AnyLiteral? = nil) {

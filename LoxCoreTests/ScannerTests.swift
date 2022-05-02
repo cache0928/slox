@@ -19,7 +19,7 @@ class ScannerTests: XCTestCase {
   }
   
   func getScanResult(source: String) throws -> [Token] {
-    let scanner = Scanner(source: source)
+    var scanner = Scanner(source: source)
     return try scanner.scanTokens()
   }
   
@@ -27,7 +27,7 @@ class ScannerTests: XCTestCase {
     let singleChars = ["(", ")", "{", "}", ",", ".", "-", "+", ";", "*"]
     for char in singleChars {
       let result = try! getScanResult(source: char)
-      XCTAssertEqual(char.tokenType, result.first?.type)
+      XCTAssertEqual(TokenType(rawValue: char)!, result.first?.type)
     }
   }
   
@@ -35,7 +35,7 @@ class ScannerTests: XCTestCase {
     let operators = ["=", "==", "!", "!=", "<", "<=", ">", ">="]
     for `operator` in operators {
       let result = try! getScanResult(source: `operator`)
-      XCTAssertEqual(`operator`.tokenType, result.first?.type)
+      XCTAssertEqual(TokenType(rawValue: `operator`), result.first?.type)
     }
   }
   
@@ -80,14 +80,7 @@ class ScannerTests: XCTestCase {
     XCTAssertEqual(result1.first?.literal as? Double, 1234.56)
     let result2 = try! getScanResult(source: "1000")
     XCTAssertEqual(result2.first?.type, .NUMBER)
-    XCTAssertEqual(result2.first?.literal as? Double, 1000)
-  }
-  
-  func testKeywordsTokenType() {
-    for entry in keywords {
-      let result = try! getScanResult(source: entry.key)
-      XCTAssertEqual(result.first?.type, entry.value)
-    }
+    XCTAssertEqual(result2.first?.literal as? Int, 1000)
   }
   
   func testScanIndentifiers() {

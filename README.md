@@ -21,7 +21,7 @@
   - [ ] Challenge 3: AST Printer In Reverse Polish Notation.
   - [ ] GenerateAst tool
   
-- [ ] 6. [**Parsing Expressions**](http://www.craftinginterpreters.com/parsing-expressions.html) 
+- [x] 6. [**Parsing Expressions**](http://www.craftinginterpreters.com/parsing-expressions.html) 
   - [ ] Helper method for parsing left-associative series of binary operators. *Swift can't pass variadic arguments between functions (no array splatting), so it's a little bit hugly.*
   - [ ] Challenge 1: Add prefix and postfix ++ and -- operators.
   - [ ] Challenge 2: Add support for the C-style conditional or “ternary” operator `?:`

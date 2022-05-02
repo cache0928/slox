@@ -7,18 +7,20 @@
 
 import Foundation
 
-public final class Scanner {
-  let source: String
+public struct Scanner {
+  private let source: String
   private var tokens: [Token] = []
-  private lazy var tokenStartIndex: String.Index = source.startIndex
-  private lazy var currentScanIndex: String.Index = source.startIndex
+  private var tokenStartIndex: String.Index
+  private var currentScanIndex: String.Index
   private var line = 1
   
   public init(source: String) {
     self.source = source
+    tokenStartIndex =  source.startIndex
+    currentScanIndex = source.startIndex
   }
   
-  public func scanTokens() throws -> [Token]  {
+  public mutating func scanTokens() throws -> [Token]  {
     repeat {
       tokenStartIndex = currentScanIndex
       try scanToken()
@@ -27,17 +29,17 @@ public final class Scanner {
     return tokens
   }
   
-  private func scanToken() throws {
+  private mutating func scanToken() throws {
     guard let c = advanceIndex() else {
       // 到达文件末尾
       return
     }
     switch c {
-      case "(",")","{","}",",",".","-","+",";","*": addToken(type: String(c).tokenType!)
-      case "!": addToken(type: match(expected: "=") ? "!=".tokenType! : "!".tokenType!)
-      case "=": addToken(type: match(expected: "=") ? "==".tokenType! : "=".tokenType!)
-      case "<": addToken(type: match(expected: "=") ? "<=".tokenType! : "<".tokenType!)
-      case ">": addToken(type: match(expected: "=") ? ">=".tokenType! : ">".tokenType!)
+      case "(",")","{","}",",",".","-","+",";","*": addToken(type: TokenType(rawValue: String(c))!)
+      case "!": addToken(type: match(expected: "=") ? TokenType(rawValue: "!=")! : TokenType(rawValue: "!")!)
+      case "=": addToken(type: match(expected: "=") ? TokenType(rawValue: "==")! : TokenType(rawValue: "=")!)
+      case "<": addToken(type: match(expected: "=") ? TokenType(rawValue: "<=")! : TokenType(rawValue: "<")!)
+      case ">": addToken(type: match(expected: "=") ? TokenType(rawValue: ">=")! : TokenType(rawValue: ">")!)
       case "/":
         if (match(expected: "/")) {
           // 是注释的话直接消耗整行
@@ -47,7 +49,7 @@ public final class Scanner {
         } else if (match(expected: "*")) {
           try scanCStyleComments()
         } else {
-          addToken(type: "/".tokenType!)
+          addToken(type: TokenType(rawValue: "/")!)
         }
       case "\"": try scanString()
       default:
@@ -61,12 +63,12 @@ public final class Scanner {
         } else if c.isAlpha {
           scanIdentifier()
         } else {
-          throw LoxError.unexpectedCharacter(line: line, message: "Unexpected character")
+          throw ScanError.unexpectedCharacter(line: line)
         }
     }
   }
   
-  private func match(expected: Character) -> Bool {
+  private mutating func match(expected: Character) -> Bool {
     guard !isAtEnd else {
       return false
     }
@@ -78,7 +80,7 @@ public final class Scanner {
   }
   
   @discardableResult
-  private func advanceIndex() -> Character? {
+  private mutating func advanceIndex() -> Character? {
     guard !isAtEnd else {
       return nil
     }
@@ -87,7 +89,7 @@ public final class Scanner {
     return c
   }
   
-  private func scanString() throws {
+  private mutating func scanString() throws {
     while currentCharacter != "\"" && !isAtEnd {
       if currentCharacter == "\n" {
         line += 1
@@ -96,7 +98,7 @@ public final class Scanner {
     }
     // 扫描到底都没发现下一个引号
     guard !isAtEnd else {
-      throw LoxError.unterminatedString(line: line, message: "Unterminated string")
+      throw ScanError.unterminatedString(line: line)
     }
     // tokenStartIndex此时指向开始的引号，currentScanIndex指向闭合引号
     let str = String(source[source.index(after: tokenStartIndex)..<currentScanIndex])
@@ -105,7 +107,7 @@ public final class Scanner {
     advanceIndex()
   }
   
-  private func scanNumber() {
+  private mutating func scanNumber() {
     while currentCharacter?.isDigit == true {
       advanceIndex()
     }
@@ -117,19 +119,23 @@ public final class Scanner {
         advanceIndex()
       }
     }
-    addToken(type: .NUMBER, literal: Double(source[tokenStartIndex..<currentScanIndex]))
+    if let value = Int(source[tokenStartIndex..<currentScanIndex]) {
+      addToken(type: .NUMBER, literal: value)
+    } else {
+      addToken(type: .NUMBER, literal: Double(source[tokenStartIndex..<currentScanIndex]))
+    }
   }
   
-  private func scanIdentifier() {
+  private mutating func scanIdentifier() {
     while currentCharacter?.isAlphaNumberic == true {
       advanceIndex()
     }
     let str = String(source[tokenStartIndex ..< currentScanIndex])
-    let tokenType = str.tokenType ?? .IDENTIFIER
+    let tokenType = TokenType(rawValue: str) ?? .IDENTIFIER
     addToken(type: tokenType)
   }
   
-  private func scanCStyleComments() throws {
+  private mutating func scanCStyleComments() throws {
     while currentCharacter != "*" && !isAtEnd {
       if currentCharacter == "\n" {
         line += 1
@@ -137,7 +143,7 @@ public final class Scanner {
       advanceIndex()
     }
     guard !isAtEnd else {
-      throw LoxError.unterminatedComment(line: line, message: "Unterminated comment")
+      throw ScanError.unterminatedComment(line: line)
     }
     advanceIndex()
     if match(expected: "/") {
@@ -147,7 +153,7 @@ public final class Scanner {
     }
   }
   
-  private func addToken(type: TokenType, literal: AnyLiteral? = nil) {
+  private mutating func addToken(type: TokenType, literal: AnyLiteral? = nil) {
     let text = source[tokenStartIndex ..< currentScanIndex]
     tokens.append(Token(type: type, lexeme: String(text), line: line, literal: literal))
   }

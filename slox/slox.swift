@@ -53,7 +53,8 @@ struct SLox: ParsableCommand {
   
   private func run(source: String) throws {
     let scanner = LoxCore.Scanner(source: source)
-    print(try scanner.scanTokens())
+    let expr = Parser(tokens: scanner.scanTokens())
+    print(expr)
   }
 }
 
