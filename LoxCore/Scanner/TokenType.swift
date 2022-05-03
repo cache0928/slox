@@ -19,7 +19,7 @@ public enum TokenType:String {
   LESS = "<", LESS_EQUAL = "<=",
 
   // Literals.
-  IDENTIFIER, STRING, NUMBER,
+  IDENTIFIER, STRING, DOUBLE, INT,
 
   // Keywords.
   AND = "and", CLASS = "class", ELSE = "else", FALSE = "false", FUN = "fun",

@@ -98,7 +98,7 @@ public struct Parser {
     if match(types: .NIL) {
       return .literal(value: nil)
     }
-    if match(types: .NUMBER, .STRING) {
+    if match(types: .DOUBLE, .STRING, .INT) {
       return .literal(value: previousToken?.literal)
     }
     if match(types: .LEFT_PAREN) {

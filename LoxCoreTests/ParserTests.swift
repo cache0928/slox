@@ -131,4 +131,11 @@ class ParserTests: XCTestCase {
     }
   }
   
+  func testExceptRightParen() {
+    let code = "(1+2"
+    var scanner = Scanner(source: code)
+    var parser = Parser(tokens: try! scanner.scanTokens())
+    XCTAssertNil(parser.parse())
+  }
+  
 }

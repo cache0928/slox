@@ -76,16 +76,16 @@ class ScannerTests: XCTestCase {
   
   func testNumberLiterals() {
     let result1 = try! getScanResult(source: "1234.56")
-    XCTAssertEqual(result1.first?.type, .NUMBER)
+    XCTAssertEqual(result1.first?.type, .DOUBLE)
     XCTAssertEqual(result1.first?.literal as? Double, 1234.56)
     let result2 = try! getScanResult(source: "1000")
-    XCTAssertEqual(result2.first?.type, .NUMBER)
+    XCTAssertEqual(result2.first?.type, .INT)
     XCTAssertEqual(result2.first?.literal as? Int, 1000)
   }
   
   func testScanIndentifiers() {
     let result = try! getScanResult(source: "var tmp = 1000")
-    XCTAssertEqual(result.map{$0.type}, [.VAR, .IDENTIFIER, .EQUAL, .NUMBER, .EOF])
+    XCTAssertEqual(result.map{$0.type}, [.VAR, .IDENTIFIER, .EQUAL, .INT, .EOF])
   }
   
   func testCStyleComments() {

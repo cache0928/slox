@@ -120,9 +120,9 @@ public struct Scanner {
       }
     }
     if let value = Int(source[tokenStartIndex..<currentScanIndex]) {
-      addToken(type: .NUMBER, literal: value)
+      addToken(type: .INT, literal: value)
     } else {
-      addToken(type: .NUMBER, literal: Double(source[tokenStartIndex..<currentScanIndex]))
+      addToken(type: .DOUBLE, literal: Double(source[tokenStartIndex..<currentScanIndex]))
     }
   }
   
