@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol AnyLiteral: CustomStringConvertible {
+public protocol AnyLiteral: CustomStringConvertible {
   
 }
 

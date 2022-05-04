@@ -8,7 +8,7 @@
 import XCTest
 @testable import LoxCore
 
-class ScannerTests: XCTestCase {
+class ScanTests: XCTestCase {
   
   override func setUpWithError() throws {
     try super.setUpWithError()

@@ -15,12 +15,8 @@ public struct Parser {
     self.tokens = tokens
   }
   
-  mutating func parse() -> Expression? {
-    do {
-      return try expression()
-    } catch {
-      return nil
-    }
+  public mutating func parse() throws -> Expression {
+    return try expression()
   }
   
   private mutating func expression() throws -> Expression {

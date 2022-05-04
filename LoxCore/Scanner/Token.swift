@@ -22,10 +22,10 @@ public struct Token: CustomStringConvertible {
   let literal: (any AnyLiteral)?
   
   public var description: String {
-    var msg =  "\(type) \(lexeme)"
+    var msg =  "type: \(type) lexeme: \(lexeme)"
     if let literal = literal {
-      msg += " \(literal)"
+      msg += " literal: \(literal)"
     }
-    return msg
+    return "Token{\(msg)}"
   }
 }

@@ -8,7 +8,6 @@
 import Foundation
 
 public enum ScanError: Error, CustomStringConvertible {
-  
   case unexpectedCharacter(line: Int)
   case unterminatedString(line: Int)
   case unterminatedComment(line: Int)
@@ -37,4 +36,18 @@ public enum ParseError: Error, CustomStringConvertible {
         return "[line \(token.line)] Error \((token.type == .EOF ? "at end" : "at '\(token.lexeme)'") + ": Expect expression.")"
     }
   }
+}
+
+public enum RuntimeError: Error, CustomStringConvertible {
+  case operandError(token: Token, message: String)
+  case unknownError(token: Token, message: String)
+  
+  public var description: String {
+    switch self {
+      case .operandError(let token, let message),
+          .unknownError(let token, let message):
+        return "[line \(token.line)] Runtime Error at '\(token.lexeme)': \(message)"
+    }
+  }
+
 }

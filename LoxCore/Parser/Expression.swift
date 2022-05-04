@@ -7,7 +7,7 @@
 
 import Foundation
 
-indirect enum Expression {
+public indirect enum Expression {
   case binary(left: Expression, right: Expression, op: Token)
   case grouping(expression: Expression)
   case literal(value: (any AnyLiteral)?)

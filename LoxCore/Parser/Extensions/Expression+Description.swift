@@ -8,7 +8,7 @@
 import Foundation
 
 extension Expression: CustomStringConvertible {
-  var description: String {
+  public var description: String {
     switch self {
       case .binary(let left, let right, let op):
         return "(\(op.lexeme) \(left.description) \(right.description))"

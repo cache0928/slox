@@ -52,9 +52,21 @@ struct SLox: ParsableCommand {
   }
   
   private func run(source: String) throws {
-    let scanner = LoxCore.Scanner(source: source)
-    let expr = Parser(tokens: scanner.scanTokens())
-    print(expr)
+    var scanner = LoxCore.Scanner(source: source)
+    var parser = Parser(tokens: try scanner.scanTokens())
+    let expr = try parser.parse()
+    let interpreter = Interpreter()
+    do {
+      let value = try interpreter.interpret(expression: expr)
+      print(value)
+    } catch {
+      if (error is RuntimeError) {
+        print(error)
+        SLox.exit(withError: ExitCode(70))
+      } else {
+        throw error
+      }
+    }
   }
 }
 
