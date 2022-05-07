@@ -7,8 +7,8 @@
 
 import Foundation
 
-extension AnyValue {
-  static func + (left: AnyValue, right: AnyValue) -> AnyValue? {
+extension ExpressionValue {
+  static func + (left: ExpressionValue, right: ExpressionValue) -> ExpressionValue? {
     switch (left, right) {
       case (.intValue(let leftRaw), .intValue(let rightRaw)):
         return .intValue(raw: leftRaw + rightRaw)
@@ -25,7 +25,7 @@ extension AnyValue {
     }
   }
   
-  static func - (left: AnyValue, right: AnyValue) -> AnyValue? {
+  static func - (left: ExpressionValue, right: ExpressionValue) -> ExpressionValue? {
     switch (left, right) {
       case (.intValue(let leftRaw), .intValue(let rightRaw)):
         return .intValue(raw: leftRaw - rightRaw)
@@ -40,7 +40,7 @@ extension AnyValue {
     }
   }
   
-  static func * (left: AnyValue, right: AnyValue) -> AnyValue? {
+  static func * (left: ExpressionValue, right: ExpressionValue) -> ExpressionValue? {
     switch (left, right) {
       case (.intValue(let leftRaw), .intValue(let rightRaw)):
         return .intValue(raw: leftRaw * rightRaw)
@@ -55,7 +55,7 @@ extension AnyValue {
     }
   }
   
-  static func / (left: AnyValue, right: AnyValue) -> AnyValue? {
+  static func / (left: ExpressionValue, right: ExpressionValue) -> ExpressionValue? {
     switch (left, right) {
       case (.intValue(let leftRaw), .intValue(let rightRaw)):
         return .intValue(raw: leftRaw / rightRaw)
@@ -70,7 +70,7 @@ extension AnyValue {
     }
   }
   
-  static prefix func - (value: AnyValue) -> AnyValue? {
+  static prefix func - (value: ExpressionValue) -> ExpressionValue? {
     switch value {
       case .intValue(let raw):
         return .intValue(raw: -raw)
@@ -81,7 +81,7 @@ extension AnyValue {
     }
   }
   
-  static prefix func ! (value: AnyValue) -> AnyValue {
+  static prefix func ! (value: ExpressionValue) -> ExpressionValue {
     switch value {
       case .boolValue(let raw):
         return .boolValue(raw: !raw)
@@ -92,7 +92,7 @@ extension AnyValue {
     }
   }
   
-  static func >= (lhs: AnyValue, rhs: AnyValue) -> AnyValue? {
+  static func >= (lhs: ExpressionValue, rhs: ExpressionValue) -> ExpressionValue? {
     switch (lhs, rhs) {
       case (.intValue(let leftRaw), .intValue(let rightRaw)):
         return .boolValue(raw: leftRaw >= rightRaw)
@@ -107,7 +107,7 @@ extension AnyValue {
     }
   }
   
-  static func > (lhs: AnyValue, rhs: AnyValue) -> AnyValue? {
+  static func > (lhs: ExpressionValue, rhs: ExpressionValue) -> ExpressionValue? {
     switch (lhs, rhs) {
       case (.intValue(let leftRaw), .intValue(let rightRaw)):
         return .boolValue(raw: leftRaw > rightRaw)
@@ -122,7 +122,7 @@ extension AnyValue {
     }
   }
   
-  static func <= (lhs: AnyValue, rhs: AnyValue) -> AnyValue? {
+  static func <= (lhs: ExpressionValue, rhs: ExpressionValue) -> ExpressionValue? {
     switch (lhs, rhs) {
       case (.intValue(let leftRaw), .intValue(let rightRaw)):
         return .boolValue(raw: leftRaw <= rightRaw)
@@ -137,7 +137,7 @@ extension AnyValue {
     }
   }
   
-  static func < (lhs: AnyValue, rhs: AnyValue) -> AnyValue? {
+  static func < (lhs: ExpressionValue, rhs: ExpressionValue) -> ExpressionValue? {
     switch (lhs, rhs) {
       case (.intValue(let leftRaw), .intValue(let rightRaw)):
         return .boolValue(raw: leftRaw < rightRaw)
@@ -152,7 +152,7 @@ extension AnyValue {
     }
   }
   
-  static func === (lhs: AnyValue, rhs: AnyValue) -> AnyValue {
+  static func === (lhs: ExpressionValue, rhs: ExpressionValue) -> ExpressionValue {
     switch (lhs, rhs) {
       case (.intValue(let leftRaw), .intValue(let rightRaw)):
         return .boolValue(raw: leftRaw == rightRaw)
@@ -173,31 +173,18 @@ extension AnyValue {
     }
   }
   
-  static func !== (lhs: AnyValue, rhs: AnyValue) -> AnyValue {
+  static func !== (lhs: ExpressionValue, rhs: ExpressionValue) -> ExpressionValue {
     return !(lhs === rhs)
   }
 }
 
-extension AnyValue: Equatable {
-  public static func == (lhs: AnyValue, rhs: AnyValue) -> Bool {
+extension ExpressionValue: Equatable {
+  public static func == (lhs: ExpressionValue, rhs: ExpressionValue) -> Bool {
     let result = lhs === rhs
     if case .boolValue(true) = result {
       return true
     } else {
       return false
-    }
-  }
-}
-
-extension AnyValue: CustomStringConvertible {
-  public var description: String {
-    switch self {
-      case .nilValue: return "nil"
-      case .intValue(let raw): return raw.description
-      case .boolValue(let raw): return raw.description
-      case .doubleValue(let raw): return raw.description
-      case .stringValue(let raw): return raw
-      case .anyValue(let raw): return "\(raw)"
     }
   }
 }

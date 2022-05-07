@@ -7,19 +7,48 @@
 
 import Foundation
 
-public struct Parser {
+struct Parser {
   private let tokens: [Token]
-  private var current = 0
+  private var currentParseIndex = 0
   
-  public init(tokens: [Token]) {
+  init(tokens: [Token]) {
     self.tokens = tokens
   }
   
-  public mutating func parse() throws -> Expression {
-    return try expression()
+  mutating func parse() throws -> [Statement] {
+    var statements: [Statement] = []
+    while !isAtEnd {
+      statements.append(try statement())
+    }
+    return statements
   }
   
-  private mutating func expression() throws -> Expression {
+  mutating func statement() throws -> Statement {
+    if match(types: .PRINT) {
+      return try printStatement()
+    }
+    return try expressionStatement()
+  }
+  
+  private mutating func expressionStatement() throws -> Statement {
+    let expression = try expression()
+    guard check(type: .SEMICOLON) else {
+      throw ParseError.expectSemicolon(token: currentToken)
+    }
+    advanceIndex()
+    return .expression(expression)
+  }
+  
+  private mutating func printStatement() throws -> Statement {
+    let expression = try expression()
+    guard check(type: .SEMICOLON) else {
+      throw ParseError.expectSemicolon(token: currentToken)
+    }
+    advanceIndex()
+    return .print(expression: expression)
+  }
+  
+  mutating func expression() throws -> Expression {
     return try equality()
   }
   
@@ -100,11 +129,12 @@ public struct Parser {
     if match(types: .LEFT_PAREN) {
       let expr = try expression()
       guard check(type: .RIGHT_PAREN) else {
-        throw ParseError.expectParen(token: currentToken!)
+        throw ParseError.expectParen(token: currentToken)
       }
+      advanceIndex()
       return .grouping(expression: expr)
     }
-    throw ParseError.expectExpression(token: currentToken!)
+    throw ParseError.expectExpression(token: currentToken)
   }
   
   private mutating func synchronize() {
@@ -113,7 +143,7 @@ public struct Parser {
       if previousToken?.type == .SEMICOLON {
         return
       }
-      switch currentToken?.type {
+      switch currentToken.type {
         case .CLASS, .FUN, .VAR, .FOR, .IF, .WHILE, .PRINT, .RETURN:
           return
         default:
@@ -137,25 +167,26 @@ public struct Parser {
     guard !isAtEnd else {
       return false
     }
-    return currentToken?.type == type
+    return currentToken.type == type
   }
   
   private var isAtEnd: Bool {
-    return current >= tokens.count
+    // 最后一个token为EOF，指向EOF及以后就算End
+    return currentParseIndex >= tokens.count - 1
   }
   
-  private var currentToken: Token? {
+  private var currentToken: Token {
     guard !isAtEnd else {
-      return nil
+      return tokens.last!
     }
-    return tokens[current]
+    return tokens[currentParseIndex]
   }
   
   private var previousToken: Token? {
-    guard current > 0 else {
+    guard currentParseIndex > 0 else {
       return nil
     }
-    return tokens[current - 1]
+    return tokens[currentParseIndex - 1]
   }
   
   @discardableResult
@@ -164,8 +195,8 @@ public struct Parser {
       return nil
     }
     defer {
-      current += 1
+      currentParseIndex += 1
     }
-    return tokens[current]
+    return tokens[currentParseIndex]
   }
 }

@@ -8,7 +8,7 @@
 import XCTest
 @testable import LoxCore
 
-class ParseTests: XCTestCase {
+class expressionTests: XCTestCase {
   
   func testAstDescription() {
     let expr = Expression.binary(
@@ -26,7 +26,7 @@ class ParseTests: XCTestCase {
     ]
     for token in boolTokens {
       var parser = Parser(tokens: [token])
-      if case let .literal(value) = try! parser.parse() {
+      if case let .literal(value) = try! parser.expression() {
         XCTAssertEqual(value as! Bool, token.literal as! Bool)
       } else {
         XCTFail()
@@ -37,7 +37,7 @@ class ParseTests: XCTestCase {
       Token(type: .DOUBLE, lexeme: "123.45", line: 1, literal: 123.45),
       Token(type: .EOF, lexeme: "", line: 1)
     ])
-    if case let .literal(value) = try! parser.parse() {
+    if case let .literal(value) = try! parser.expression() {
       XCTAssertEqual(value as! Double, 123.45)
     } else {
       XCTFail()
@@ -46,7 +46,7 @@ class ParseTests: XCTestCase {
       Token(type: .STRING, lexeme: "test string", line: 1, literal: "test string"),
       Token(type: .EOF, lexeme: "", line: 1)
     ])
-    if case let .literal(value) = try! parser.parse() {
+    if case let .literal(value) = try! parser.expression() {
       XCTAssertEqual(value as! String, "test string")
     } else {
       XCTFail()
@@ -55,7 +55,7 @@ class ParseTests: XCTestCase {
       Token(type: .NIL, lexeme: "nil", line: 1),
       Token(type: .EOF, lexeme: "", line: 1)
     ])
-    if case let .literal(value) = try! parser.parse() {
+    if case let .literal(value) = try! parser.expression() {
       XCTAssertNil(value)
     } else {
       XCTFail()
@@ -68,7 +68,7 @@ class ParseTests: XCTestCase {
       Token(type: .TRUE, lexeme: "true", line: 1, literal: true),
       Token(type: .EOF, lexeme: "", line: 1)
     ])
-    if case let .unary(op, right) = try! parser.parse(),
+    if case let .unary(op, right) = try! parser.expression(),
         case let .literal(value) = right {
       XCTAssertEqual(op.type, .BANG)
       XCTAssertEqual(value as? Bool, true)
@@ -84,7 +84,7 @@ class ParseTests: XCTestCase {
       Token(type: .DOUBLE, lexeme: "4.5", line: 1, literal: 4.5),
       Token(type: .EOF, lexeme: "", line: 1)
     ])
-    if case let .binary(left, right, op) = try! parser.parse(),
+    if case let .binary(left, right, op) = try! parser.expression(),
        case let .literal(leftValue) = left,
         case let .literal(rightValue) = right {
       XCTAssertEqual(op.type, .STAR)
@@ -102,7 +102,7 @@ class ParseTests: XCTestCase {
       Token(type: .DOUBLE, lexeme: "4.5", line: 1, literal: 4.5),
       Token(type: .EOF, lexeme: "", line: 1)
     ])
-    if case let .binary(left, right, op) = try! parser.parse(),
+    if case let .binary(left, right, op) = try! parser.expression(),
        case let .literal(leftValue) = left,
         case let .literal(rightValue) = right {
       XCTAssertEqual(op.type, .MINUS)
@@ -120,7 +120,7 @@ class ParseTests: XCTestCase {
       Token(type: .DOUBLE, lexeme: "4.5", line: 1, literal: 4.5),
       Token(type: .EOF, lexeme: "", line: 1)
     ])
-    if case let .binary(left, right, op) = try! parser.parse(),
+    if case let .binary(left, right, op) = try! parser.expression(),
        case let .literal(leftValue) = left,
         case let .literal(rightValue) = right {
       XCTAssertEqual(op.type, .GREATER_EQUAL)
@@ -138,7 +138,7 @@ class ParseTests: XCTestCase {
       Token(type: .DOUBLE, lexeme: "4.5", line: 1, literal: 4.5),
       Token(type: .EOF, lexeme: "", line: 1)
     ])
-    if case let .binary(left, right, op) = try! parser.parse(),
+    if case let .binary(left, right, op) = try! parser.expression(),
        case let .literal(leftValue) = left,
         case let .literal(rightValue) = right {
       XCTAssertEqual(op.type, .EQUAL_EQUAL)
@@ -157,7 +157,7 @@ class ParseTests: XCTestCase {
       Token(type: .INT, lexeme: "2", line: 1, literal: 2),
       Token(type: .EOF, lexeme: "", line: 1)
     ])
-    XCTAssertThrowsError(try parser.parse())
+    XCTAssertThrowsError(try parser.expression())
   }
   
 }

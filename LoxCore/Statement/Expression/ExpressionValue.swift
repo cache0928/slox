@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum AnyValue {
+public enum ExpressionValue {
   case nilValue
   case boolValue(raw: Bool)
   case intValue(raw: Int)
@@ -16,7 +16,20 @@ public enum AnyValue {
   case anyValue(raw: Any)
 }
 
-extension AnyValue: RawRepresentable {
+extension ExpressionValue: CustomStringConvertible {
+  public var description: String {
+    switch self {
+      case .nilValue: return "nil"
+      case .intValue(let raw): return raw.description
+      case .boolValue(let raw): return raw.description
+      case .doubleValue(let raw): return raw.description
+      case .stringValue(let raw): return raw
+      case .anyValue(let raw): return "\(raw)"
+    }
+  }
+}
+
+extension ExpressionValue: RawRepresentable {
   public init(rawValue: Any?) {
     guard let raw = rawValue else {
       self = .nilValue
@@ -53,32 +66,32 @@ extension AnyValue: RawRepresentable {
   }
 }
 
-extension AnyValue: ExpressibleByIntegerLiteral {
+extension ExpressionValue: ExpressibleByIntegerLiteral {
   public init(integerLiteral value: IntegerLiteralType) {
-    self = AnyValue(rawValue: value)
+    self = ExpressionValue(rawValue: value)
   }
 }
 
-extension AnyValue: ExpressibleByNilLiteral {
+extension ExpressionValue: ExpressibleByNilLiteral {
   public init(nilLiteral: ()) {
-    self = AnyValue(rawValue: nil)
+    self = ExpressionValue(rawValue: nil)
   }
 }
 
-extension AnyValue: ExpressibleByFloatLiteral {
+extension ExpressionValue: ExpressibleByFloatLiteral {
   public init(floatLiteral value: FloatLiteralType) {
-    self = AnyValue(rawValue: value)
+    self = ExpressionValue(rawValue: value)
   }
 }
 
-extension AnyValue: ExpressibleByBooleanLiteral {
+extension ExpressionValue: ExpressibleByBooleanLiteral {
   public init(booleanLiteral value: BooleanLiteralType) {
-    self = AnyValue(rawValue: value)
+    self = ExpressionValue(rawValue: value)
   }
 }
 
-extension AnyValue: ExpressibleByStringLiteral {
+extension ExpressionValue: ExpressibleByStringLiteral {
   public init(stringLiteral value: StringLiteralType) {
-    self = AnyValue(rawValue: value)
+    self = ExpressionValue(rawValue: value)
   }
 }

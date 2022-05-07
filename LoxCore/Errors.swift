@@ -27,6 +27,7 @@ public enum ScanError: Error, CustomStringConvertible {
 public enum ParseError: Error, CustomStringConvertible {
   case expectParen(token: Token)
   case expectExpression(token: Token)
+  case expectSemicolon(token: Token)
   
   public var description: String {
     switch self {
@@ -34,6 +35,8 @@ public enum ParseError: Error, CustomStringConvertible {
         return "[line \(token.line)] Error \((token.type == .EOF ? "at end" : "at '\(token.lexeme)'") + ": Expect ')' after expression.")"
       case .expectExpression(let token):
         return "[line \(token.line)] Error \((token.type == .EOF ? "at end" : "at '\(token.lexeme)'") + ": Expect expression.")"
+      case .expectSemicolon(let token):
+        return "[line \(token.line)] Error \((token.type == .EOF ? "at end" : "at '\(token.lexeme)'") + ": Expect ';' after value.")"
     }
   }
 }

@@ -8,21 +8,21 @@
 import Foundation
 
 extension Expression {
-  var evaluated: AnyValue {
+  var evaluated: ExpressionValue {
     get throws {
       switch self {
         case .literal(let value):
           guard value != nil else {
-            return AnyValue.nilValue
+            return ExpressionValue.nilValue
           }
           if let intValue = value as? Int {
-            return AnyValue.intValue(raw: intValue)
+            return ExpressionValue.intValue(raw: intValue)
           } else if let doubleValue = value as? Double {
-            return AnyValue.doubleValue(raw: doubleValue)
+            return ExpressionValue.doubleValue(raw: doubleValue)
           } else if let strValue = value as? String {
-            return AnyValue.stringValue(raw: strValue)
+            return ExpressionValue.stringValue(raw: strValue)
           }
-          return AnyValue.boolValue(raw: value as! Bool)
+          return ExpressionValue.boolValue(raw: value as! Bool)
         case .grouping(let expression):
           return try expression.evaluated
         case .unary(let op, let right):
@@ -33,7 +33,7 @@ extension Expression {
     }
   }
   
-  fileprivate func evaluateUnary(op: Token, right: Expression) throws -> AnyValue {
+  fileprivate func evaluateUnary(op: Token, right: Expression) throws -> ExpressionValue {
     let rightValue = try right.evaluated
     switch op.type {
       case .MINUS:
@@ -48,12 +48,12 @@ extension Expression {
     }
   }
   
-  fileprivate func evaluateBinary(op: Token, left: Expression, right: Expression) throws -> AnyValue {
+  fileprivate func evaluateBinary(op: Token, left: Expression, right: Expression) throws -> ExpressionValue {
     
-    func evaluateOp(leftValue: AnyValue,
-                    rightValue: AnyValue,
-                    `operator`: (AnyValue, AnyValue) -> AnyValue?,
-                    errorMessage: String = "Operands must be two numbers.") throws -> AnyValue  {
+    func evaluateOp(leftValue: ExpressionValue,
+                    rightValue: ExpressionValue,
+                    `operator`: (ExpressionValue, ExpressionValue) -> ExpressionValue?,
+                    errorMessage: String = "Operands must be two numbers.") throws -> ExpressionValue  {
       guard let result = `operator`(leftValue, rightValue) else {
         throw RuntimeError.operandError(
           token: op,

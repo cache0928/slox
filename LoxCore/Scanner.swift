@@ -7,20 +7,20 @@
 
 import Foundation
 
-public struct Scanner {
+struct Scanner {
   private let source: String
   private var tokens: [Token] = []
   private var tokenStartIndex: String.Index
   private var currentScanIndex: String.Index
   private var line = 1
   
-  public init(source: String) {
+  init(source: String) {
     self.source = source
     tokenStartIndex =  source.startIndex
     currentScanIndex = source.startIndex
   }
   
-  public mutating func scanTokens() throws -> [Token]  {
+  mutating func scanTokens() throws -> [Token]  {
     repeat {
       tokenStartIndex = currentScanIndex
       try scanToken()
