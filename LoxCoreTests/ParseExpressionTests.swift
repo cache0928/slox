@@ -25,7 +25,7 @@ class expressionTests: XCTestCase {
       Token(type: .FALSE, lexeme: "false", line: 1, literal: false),
     ]
     for token in boolTokens {
-      var parser = Parser(tokens: [token])
+      var parser = Parser(tokens: [token, Token(type: .EOF, lexeme: "", line: 1)])
       if case let .literal(value) = try! parser.expression() {
         XCTAssertEqual(value as! Bool, token.literal as! Bool)
       } else {

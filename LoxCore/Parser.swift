@@ -32,19 +32,13 @@ struct Parser {
   
   private mutating func expressionStatement() throws -> Statement {
     let expression = try expression()
-    guard check(type: .SEMICOLON) else {
-      throw ParseError.expectSemicolon(token: currentToken)
-    }
-    advanceIndex()
+    try attemp(consume: .SEMICOLON, else: ParseError.expectSemicolon(token: currentToken))
     return .expression(expression)
   }
   
   private mutating func printStatement() throws -> Statement {
     let expression = try expression()
-    guard check(type: .SEMICOLON) else {
-      throw ParseError.expectSemicolon(token: currentToken)
-    }
-    advanceIndex()
+    try attemp(consume: .SEMICOLON, else: ParseError.expectSemicolon(token: currentToken))
     return .print(expression: expression)
   }
   
@@ -128,10 +122,7 @@ struct Parser {
     }
     if match(types: .LEFT_PAREN) {
       let expr = try expression()
-      guard check(type: .RIGHT_PAREN) else {
-        throw ParseError.expectParen(token: currentToken)
-      }
-      advanceIndex()
+      try attemp(consume: .RIGHT_PAREN, else: ParseError.expectParen(token: currentToken))
       return .grouping(expression: expr)
     }
     throw ParseError.expectExpression(token: currentToken)
@@ -168,6 +159,13 @@ struct Parser {
       return false
     }
     return currentToken.type == type
+  }
+  
+  private mutating func attemp(consume type: TokenType, else throw: Error) throws {
+    guard check(type: type) else {
+      throw `throw`
+    }
+    advanceIndex()
   }
   
   private var isAtEnd: Bool {
