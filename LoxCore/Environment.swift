@@ -7,12 +7,20 @@
 
 import Foundation
 
-class Environment {
+final class Environment {
   private var values: [String: ExpressionValue] = [:]
+  private let enclosing: Environment?
+  
+  init(enclosing: Environment? = nil) {
+    self.enclosing = enclosing
+  }
   
   subscript(variable: Token) -> ExpressionValue {
     get throws {
       guard values.keys.contains(variable.lexeme) else {
+        if let parent = enclosing {
+          return try parent[variable]
+        }
         throw RuntimeError.undefinedVariable(token: variable)
       }
       return values[variable.lexeme]!
@@ -23,8 +31,12 @@ class Environment {
     values[variable.lexeme] = value
   }
   
-  func redefine(variable: Token, value: ExpressionValue) throws {
+  func assign(variable: Token, value: ExpressionValue) throws {
     guard values.keys.contains(variable.lexeme) else {
+      if let parent = enclosing {
+        try parent.assign(variable: variable, value: value)
+        return
+      }
       throw RuntimeError.undefinedVariable(token: variable)
     }
     values[variable.lexeme] = value

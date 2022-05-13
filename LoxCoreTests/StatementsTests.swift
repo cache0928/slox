@@ -42,7 +42,7 @@ class StatementsTests: XCTestCase {
   
   func testDeclareVariable() {
     let varName = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
-    let variableDeclStatement = Statement.variable(name: varName, initializer: .literal(value: 10))
+    let variableDeclStatement = Statement.variableDeclaration(name: varName, initializer: .literal(value: 10))
     try! interpreter.executed(statement: variableDeclStatement)
     let variableExpr = Expression.variable(name: varName)
     XCTAssertEqual(ExpressionValue(rawValue: 10), try! interpreter.evaluate(expression: variableExpr))
@@ -50,7 +50,7 @@ class StatementsTests: XCTestCase {
   
   func testDeclareVariableWithoutInitializer() {
     let varName = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
-    let variableDeclStatement = Statement.variable(name: varName)
+    let variableDeclStatement = Statement.variableDeclaration(name: varName)
     try! interpreter.executed(statement: variableDeclStatement)
     let variableExpr = Expression.variable(name: varName)
     XCTAssertEqual(ExpressionValue(rawValue: nil), try! interpreter.evaluate(expression: variableExpr))
@@ -58,7 +58,7 @@ class StatementsTests: XCTestCase {
   
   func testAssignValueToExistVariable() {
     let varName = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
-    let variableDeclStatement = Statement.variable(name: varName, initializer: .literal(value: 10))
+    let variableDeclStatement = Statement.variableDeclaration(name: varName, initializer: .literal(value: 10))
     try! interpreter.executed(statement: variableDeclStatement)
     let assignment = Expression.assign(name: varName, value: .literal(value: 100))
     try! interpreter.evaluate(expression: assignment)
@@ -74,10 +74,10 @@ class StatementsTests: XCTestCase {
   
   func testAssignmentRecursivly() {
     let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
-    let variableADeclStatement = Statement.variable(name: varA)
+    let variableADeclStatement = Statement.variableDeclaration(name: varA)
     try! interpreter.executed(statement: variableADeclStatement)
     let varB = Token(type: .IDENTIFIER, lexeme: "b", line: 1)
-    let variableBDeclStatement = Statement.variable(name: varB)
+    let variableBDeclStatement = Statement.variableDeclaration(name: varB)
     try! interpreter.executed(statement: variableBDeclStatement)
     let assignmentB = Expression.assign(name: varB, value: .literal(value: 100))
     let assignmentA = Expression.assign(name: varA, value: assignmentB)
@@ -86,6 +86,24 @@ class StatementsTests: XCTestCase {
     let valueB = try! interpreter.evaluate(expression: Expression.variable(name: varB))
     XCTAssertEqual(valueB, ExpressionValue.intValue(raw: 100))
     XCTAssertEqual(valueA, valueB)
+  }
+  
+  func testBlockEnvironmentStackEnter() {
+    let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    try! interpreter.executed(statement: .variableDeclaration(name: varA, initializer: .literal(value: 1)))
+    let blockA = Statement.block(statements: [
+      .variableDeclaration(name: varA, initializer: .literal(value: 1))
+    ])
+    XCTAssertNoThrow(try interpreter.executed(statement: blockA))
+  }
+  
+  func testBlockEnvironmentStackPop() {
+    let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let blockA = Statement.block(statements: [
+      .variableDeclaration(name: varA, initializer: .literal(value: 1))
+    ])
+    try! interpreter.executed(statement: blockA)
+    XCTAssertThrowsError(try interpreter.evaluate(expression: .variable(name: varA)))
   }
   
 }

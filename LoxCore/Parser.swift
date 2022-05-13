@@ -22,7 +22,7 @@ struct Parser {
         statements.append(try statement())
       } catch {
         // 此处只有ParseError
-        // 如果是语法错误，进入错误恢复模式
+        // 语法错误，进入错误恢复模式
         synchronize()
         continue
       }
@@ -32,22 +32,25 @@ struct Parser {
   
   mutating func statement() throws -> Statement {
     if match(types: .VAR) {
-      return try variableStatement()
+      return try declarationStatement()
     }
     if match(types: .PRINT) {
       return try printStatement()
     }
+    if match(types: .LEFT_BRACE) {
+      return .block(statements: try blockStatement())
+    }
     return try expressionStatement()
   }
   
-  private mutating func variableStatement() throws -> Statement {
+  private mutating func declarationStatement() throws -> Statement {
     let varName = try attemp(consume: .IDENTIFIER, else: ParseError.expectVariableName(token: currentToken))
     var initializer: Expression? = nil
     if match(types: .EQUAL) {
       initializer = try expression()
     }
     try attemp(consume: .SEMICOLON, else: ParseError.expectSemicolon(token: currentToken))
-    return .variable(name: varName, initializer: initializer)
+    return .variableDeclaration(name: varName, initializer: initializer)
   }
   
   private mutating func expressionStatement() throws -> Statement {
@@ -60,6 +63,15 @@ struct Parser {
     let expression = try expression()
     try attemp(consume: .SEMICOLON, else: ParseError.expectSemicolon(token: currentToken))
     return .print(expression: expression)
+  }
+  
+  private mutating func blockStatement() throws -> [Statement] {
+    var statements: [Statement] = []
+    while !check(type: .RIGHT_BRACE) && !isAtEnd {
+      statements.append(try statement())
+    }
+    try attemp(consume: .RIGHT_BRACE, else: ParseError.expectBrace(token: currentToken))
+    return statements
   }
   
   mutating func expression() throws -> Expression {

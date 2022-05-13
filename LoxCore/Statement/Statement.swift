@@ -13,5 +13,7 @@ public enum Statement {
   // printStmt      → "print" expression ";"
   case print(expression: Expression)
   // varDecl        → "var" IDENTIFIER ( "=" expression )? ";"
-  case variable(name: Token, initializer: Expression? = nil)
+  case variableDeclaration(name: Token, initializer: Expression? = nil)
+  // block          → "{" declaration* "}"
+  case block(statements: [Statement])
 }

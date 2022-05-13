@@ -7,10 +7,21 @@
 
 import Foundation
 
-public struct Interpreter  {
-  private let environment: Environment = Environment()
+public final class Interpreter  {
+  private var environmentStack: [Environment] = [Environment()]
   
-  public func interpret(statements: [Statement]) throws {
+  public init() {
+    
+  }
+  
+  public func interpret(code: String) throws {
+    var scanner = Scanner(source: code)
+    var parser = Parser(tokens: try scanner.scanTokens())
+    let statements = parser.parse()
+    try interpret(statements: statements)
+  }
+  
+  func interpret(statements: [Statement]) throws {
     for statement in statements {
       try executed(statement: statement)
     }
@@ -26,10 +37,21 @@ extension Interpreter: StatementExecutor {
       case .print(let expr):
         let value = try evaluate(expression: expr)
         Swift.print(value.description)
-      case .variable(let name, let initializer):
-        environment.define(variable: name,
+      case .variableDeclaration(let name, let initializer):
+        environmentStack.last?.define(variable: name,
                            value: initializer == nil ? .nilValue : try evaluate(expression: initializer!))
+      case .block(let statements):
+        try executeBlock(statements: statements)
     }
+  }
+  
+  private func executeBlock(statements: [Statement]) throws {
+    let environment = Environment(enclosing: self.environmentStack.last)
+    environmentStack.append(environment)
+    defer {
+      _ = environmentStack.popLast()
+    }
+    try interpret(statements: statements)
   }
   
   @discardableResult
@@ -54,10 +76,10 @@ extension Interpreter: StatementExecutor {
       case .binary(let left, let right, let op):
         return try evaluateBinary(op: op, left: left, right: right)
       case .variable(let varName):
-        return try environment[varName]
+        return try environmentStack.last![varName]
       case .assign(let varName, let valueExpression):
         let value = try evaluate(expression: valueExpression)
-        try environment.redefine(variable: varName, value: value)
+        try environmentStack.last?.assign(variable: varName, value: value)
         return value
     }
   }

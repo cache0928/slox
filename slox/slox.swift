@@ -53,15 +53,8 @@ struct SLox: ParsableCommand {
   
   private func run(source: String) throws {
     do {
-      let interpreter = try Interpreter(source: source)
-      for result in interpreter {
-        switch result {
-          case .success(let _):
-            break
-          case .failure(let error):
-            throw error
-        }
-      }
+      let interpreter = Interpreter()
+      try interpreter.interpret(code: source)
     } catch {
       if (error is RuntimeError) {
         print(error)

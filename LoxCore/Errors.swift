@@ -34,6 +34,7 @@ public enum ParseError: Error, CustomStringConvertible {
   case expectSemicolon(token: Token)
   case expectVariableName(token: Token)
   case invalidAssignmentTarget(token: Token)
+  case expectBrace(token: Token)
   
   public var description: String {
     switch self {
@@ -47,6 +48,8 @@ public enum ParseError: Error, CustomStringConvertible {
         return "\(basicInfo(token: token)) Expect variable name."
       case .invalidAssignmentTarget(let token):
         return "\(basicInfo(token: token)) Invalid assignment target."
+      case .expectBrace(let token):
+        return "\(basicInfo(token: token)) Expect '}' after expression."
     }
   }
 }
