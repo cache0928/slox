@@ -15,19 +15,39 @@ struct Parser {
     self.tokens = tokens
   }
   
-  mutating func parse() throws -> [Statement] {
+  mutating func parse() -> [Statement] {
     var statements: [Statement] = []
     while !isAtEnd {
-      statements.append(try statement())
+      do {
+        statements.append(try statement())
+      } catch {
+        // 此处只有ParseError
+        // 如果是语法错误，进入错误恢复模式
+        synchronize()
+        continue
+      }
     }
     return statements
   }
   
   mutating func statement() throws -> Statement {
+    if match(types: .VAR) {
+      return try variableStatement()
+    }
     if match(types: .PRINT) {
       return try printStatement()
     }
     return try expressionStatement()
+  }
+  
+  private mutating func variableStatement() throws -> Statement {
+    let varName = try attemp(consume: .IDENTIFIER, else: ParseError.expectVariableName(token: currentToken))
+    var initializer: Expression? = nil
+    if match(types: .EQUAL) {
+      initializer = try expression()
+    }
+    try attemp(consume: .SEMICOLON, else: ParseError.expectSemicolon(token: currentToken))
+    return .variable(name: varName, initializer: initializer)
   }
   
   private mutating func expressionStatement() throws -> Statement {
@@ -43,7 +63,22 @@ struct Parser {
   }
   
   mutating func expression() throws -> Expression {
-    return try equality()
+    return try assignment()
+  }
+  
+  // 赋值表达式
+  // IDENTIFIER "=" assignment | equality
+  private mutating func assignment() throws -> Expression {
+    let expr = try equality()
+    if match(types: .EQUAL) {
+      let equalToken = previousToken!
+      let value = try assignment()
+      guard case let Expression.variable(varName) = expr else {
+        throw ParseError.invalidAssignmentTarget(token: equalToken)
+      }
+      return .assign(name: varName, value: value)
+    }
+    return expr
   }
   
   // 等式表达式
@@ -106,7 +141,7 @@ struct Parser {
   }
   
   // 主表达式
-  // NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")"
+  // NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER 
   private mutating func primary() throws -> Expression {
     if match(types: .FALSE) {
       return .literal(value: false)
@@ -116,6 +151,9 @@ struct Parser {
     }
     if match(types: .NIL) {
       return .literal(value: nil)
+    }
+    if match(types: .IDENTIFIER) {
+      return .variable(name: previousToken!)
     }
     if match(types: .DOUBLE, .STRING, .INT) {
       return .literal(value: previousToken?.literal)
@@ -161,11 +199,12 @@ struct Parser {
     return currentToken.type == type
   }
   
-  private mutating func attemp(consume type: TokenType, else throw: Error) throws {
+  @discardableResult
+  private mutating func attemp(consume type: TokenType, else throw: Error) throws -> Token {
     guard check(type: type) else {
       throw `throw`
     }
-    advanceIndex()
+    return advanceIndex()!
   }
   
   private var isAtEnd: Bool {

@@ -1,40 +1,21 @@
 //
-//  File.swift
+//  ExpressionEvaluator.swift
 //  LoxCore
 //
-//  Created by 徐才超 on 2022/5/3.
+//  Created by 徐才超 on 2022/5/13.
 //
 
 import Foundation
 
-extension Expression {
-  var evaluated: ExpressionValue {
-    get throws {
-      switch self {
-        case .literal(let value):
-          guard value != nil else {
-            return ExpressionValue.nilValue
-          }
-          if let intValue = value as? Int {
-            return ExpressionValue.intValue(raw: intValue)
-          } else if let doubleValue = value as? Double {
-            return ExpressionValue.doubleValue(raw: doubleValue)
-          } else if let strValue = value as? String {
-            return ExpressionValue.stringValue(raw: strValue)
-          }
-          return ExpressionValue.boolValue(raw: value as! Bool)
-        case .grouping(let expression):
-          return try expression.evaluated
-        case .unary(let op, let right):
-          return try evaluateUnary(op: op, right: right)
-        case .binary(let left, let right, let op):
-          return try evaluateBinary(op: op, left: left, right: right)
-      }
-    }
-  }
-  
-  fileprivate func evaluateUnary(op: Token, right: Expression) throws -> ExpressionValue {
-    let rightValue = try right.evaluated
+protocol ExpressionEvaluator {
+  func evaluate(expression: Expression) throws -> ExpressionValue
+  func evaluateUnary(op: Token, right: Expression) throws -> ExpressionValue
+  func evaluateBinary(op: Token, left: Expression, right: Expression) throws -> ExpressionValue
+}
+
+extension ExpressionEvaluator {
+   func evaluateUnary(op: Token, right: Expression) throws -> ExpressionValue {
+    let rightValue = try evaluate(expression: right)
     switch op.type {
       case .MINUS:
         guard let result = -rightValue else {
@@ -48,8 +29,7 @@ extension Expression {
     }
   }
   
-  fileprivate func evaluateBinary(op: Token, left: Expression, right: Expression) throws -> ExpressionValue {
-    
+  func evaluateBinary(op: Token, left: Expression, right: Expression) throws -> ExpressionValue {
     func evaluateOp(leftValue: ExpressionValue,
                     rightValue: ExpressionValue,
                     `operator`: (ExpressionValue, ExpressionValue) -> ExpressionValue?,
@@ -63,8 +43,8 @@ extension Expression {
       return result
     }
     
-    let leftValue = try left.evaluated
-    let rightValue = try right.evaluated
+    let leftValue = try evaluate(expression: left)
+    let rightValue = try evaluate(expression: right)
     switch op.type {
       case .PLUS:
         return try evaluateOp(leftValue: leftValue, rightValue: rightValue,
@@ -92,5 +72,8 @@ extension Expression {
         throw RuntimeError.operandError(token: op, message: "Unsupport binary operator.")
     }
   }
-  
+}
+
+protocol StatementExecutor: ExpressionEvaluator {
+  func executed(statement: Statement) throws 
 }

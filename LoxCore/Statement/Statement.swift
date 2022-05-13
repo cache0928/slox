@@ -8,21 +8,10 @@
 import Foundation
 
 public enum Statement {
+  // exprStmt       → expression ";"
   case expression(_: Expression)
+  // printStmt      → "print" expression ";"
   case print(expression: Expression)
-}
-
-extension Statement {
-  var executed: ExpressionValue? {
-    get throws {
-      switch self {
-        case .expression(let expr):
-          return try expr.evaluated
-        case .print(let expr):
-          let value = try expr.evaluated
-          Swift.print(value.description)
-          return nil
-      }
-    }
-  }
+  // varDecl        → "var" IDENTIFIER ( "=" expression )? ";"
+  case variable(name: Token, initializer: Expression? = nil)
 }

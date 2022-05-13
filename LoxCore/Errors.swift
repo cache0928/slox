@@ -24,19 +24,29 @@ public enum ScanError: Error, CustomStringConvertible {
   }
 }
 
+fileprivate func basicInfo(token: Token) -> String {
+  return "[line \(token.line)] Error \(token.type == .EOF ? "at end" : "at '\(token.lexeme)'"):"
+}
+
 public enum ParseError: Error, CustomStringConvertible {
   case expectParen(token: Token)
   case expectExpression(token: Token)
   case expectSemicolon(token: Token)
+  case expectVariableName(token: Token)
+  case invalidAssignmentTarget(token: Token)
   
   public var description: String {
     switch self {
       case .expectParen(let token):
-        return "[line \(token.line)] Error \((token.type == .EOF ? "at end" : "at '\(token.lexeme)'") + ": Expect ')' after expression.")"
+        return "\(basicInfo(token: token)) Expect ')' after expression."
       case .expectExpression(let token):
-        return "[line \(token.line)] Error \((token.type == .EOF ? "at end" : "at '\(token.lexeme)'") + ": Expect expression.")"
+        return "\(basicInfo(token: token)) Expect expression."
       case .expectSemicolon(let token):
-        return "[line \(token.line)] Error \((token.type == .EOF ? "at end" : "at '\(token.lexeme)'") + ": Expect ';' after value.")"
+        return "\(basicInfo(token: token)) Expect ';' after value."
+      case .expectVariableName(let token):
+        return "\(basicInfo(token: token)) Expect variable name."
+      case .invalidAssignmentTarget(let token):
+        return "\(basicInfo(token: token)) Invalid assignment target."
     }
   }
 }
@@ -44,12 +54,16 @@ public enum ParseError: Error, CustomStringConvertible {
 public enum RuntimeError: Error, CustomStringConvertible {
   case operandError(token: Token, message: String)
   case unknownError(token: Token, message: String)
+  case undefinedVariable(token: Token)
   
   public var description: String {
     switch self {
       case .operandError(let token, let message),
           .unknownError(let token, let message):
         return "[line \(token.line)] Runtime Error at '\(token.lexeme)': \(message)"
+      case .undefinedVariable(let token):
+        return "\(basicInfo(token: token)) Undefined variable '\(token.lexeme)'."
+      
     }
   }
 
