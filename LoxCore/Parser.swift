@@ -45,6 +45,9 @@ struct Parser {
     if match(types: .IF) {
       return try ifStatement()
     }
+    if match(types: .WHILE ){
+      return try whileStatement()
+    }
     return try expressionStatement()
   }
   
@@ -91,6 +94,14 @@ struct Parser {
     let thenBranch = try statement()
     let elseBranch = match(types: .ELSE) ? try statement() : nil
     return .ifStatement(condition: condition, thenBranch: thenBranch, elseBranch: elseBranch)
+  }
+  
+  private mutating func whileStatement() throws -> Statement {
+    try attemp(consume: .LEFT_PAREN, else: ParseError.expectLeftParen(token: currentToken))
+    let condition = try expression()
+    try attemp(consume: .RIGHT_PAREN, else: ParseError.expectRightParen(token: currentToken))
+    let body = try statement()
+    return .whileStatement(condition: condition, body: body)
   }
   
   // MARK: - 解析表达式

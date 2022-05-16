@@ -18,4 +18,6 @@ public indirect enum Statement {
   case block(statements: [Statement])
   // ifStmt         → "if" "(" expression ")" statement ( "else" statement )?
   case ifStatement(condition: Expression, thenBranch: Statement, elseBranch: Statement?)
+  // whileStmt      → "while" "(" expression ")" statement
+  case whileStatement(condition: Expression, body: Statement)
 }

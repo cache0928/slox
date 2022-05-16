@@ -51,6 +51,10 @@ extension Interpreter: StatementExecutor {
             try executed(statement: elseBranch)
           }
         }
+      case .whileStatement(let condition, let body):
+        while try evaluate(expression: condition).isTruthy {
+          try executed(statement: body)
+        }
     }
   }
   

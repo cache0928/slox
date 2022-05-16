@@ -135,4 +135,25 @@ class StatementsTests: XCTestCase {
     try! interpreter.executed(statement: block)
     XCTAssertEqual(try! interpreter.evaluate(expression: .variable(name: varA)), ExpressionValue.boolValue(raw: false))
   }
+  
+  func testWhileStatementExecute() {
+    let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    try! interpreter.executed(statement: .variableDeclaration(name: varA, initializer: .literal(value: 1)))
+    let whileStmt = Statement.whileStatement(condition: .binary(left: .variable(name: varA),
+                                                                right: .literal(value: 3),
+                                                                op: Token(type: .LESS, lexeme: "<", line: 1)),
+                                             body: .block(statements: [
+                                                .expression(
+                                                  .assign(name: varA,
+                                                          value: .binary(left: .variable(name: varA),
+                                                                         right: .literal(value: 1),
+                                                                         op: Token(type: .PLUS, lexeme: "+", line: 1)
+                                                                        )
+                                                         )
+                                                )
+                                             ])
+    )
+    try! interpreter.executed(statement: whileStmt)
+    XCTAssertEqual(try! interpreter.evaluate(expression: .variable(name: varA)), ExpressionValue.intValue(raw: 3))
+  }
 }
