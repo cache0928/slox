@@ -38,8 +38,11 @@ struct Parser {
     if match(types: .IF) {
       return try ifStatement()
     }
-    if match(types: .WHILE ){
+    if match(types: .WHILE) {
       return try whileStatement()
+    }
+    if match(types: .FOR) {
+      return try forStatement()
     }
     return try expressionStatement()
   }
@@ -89,12 +92,42 @@ struct Parser {
     return .ifStatement(condition: condition, thenBranch: thenBranch, elseBranch: elseBranch)
   }
   
+  // while块
   private mutating func whileStatement() throws -> Statement {
     try attemp(consume: .LEFT_PAREN, else: ParseError.expectLeftParen(token: currentToken))
     let condition = try expression()
     try attemp(consume: .RIGHT_PAREN, else: ParseError.expectRightParen(token: currentToken))
     let body = try statement()
     return .whileStatement(condition: condition, body: body)
+  }
+  
+  // for块
+  // forStmt        → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
+  // for语句的parse不会产生单独种类的statement，而是直接通过block嵌套while来实现
+  private mutating func forStatement() throws -> Statement {
+    try attemp(consume: .LEFT_PAREN, else: ParseError.expectLeftParen(token: currentToken))
+    var initializer: Statement? = nil
+    if !match(types: .SEMICOLON) {
+      initializer = try statement()
+    }
+    var condition: Expression? = nil
+    if !match(types: .SEMICOLON) {
+      condition = try expression()
+    }
+    try attemp(consume: .SEMICOLON, else: ParseError.expectSemicolon(token: currentToken))
+    var increment: Expression? = nil
+    if !match(types: .RIGHT_PAREN) {
+      increment = try expression()
+    }
+    try attemp(consume: .RIGHT_PAREN, else: ParseError.expectRightParen(token: currentToken))
+    let body = try statement()
+    var statements: [Statement] = []
+    if initializer != nil {
+      statements.append(initializer!)
+    }
+    let forBody = increment == nil ? body : .block(statements: [body, .expression(increment!)])
+    statements.append(.whileStatement(condition: condition ?? .literal(value: true), body: forBody))
+    return .block(statements: statements)
   }
   
   // MARK: - 解析表达式
