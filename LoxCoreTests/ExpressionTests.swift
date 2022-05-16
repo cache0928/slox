@@ -260,4 +260,9 @@ class ExpressionTests: XCTestCase {
     XCTAssertEqual(ExpressionValue(rawValue: 7), try! interpreter.evaluate(expression: minusExpr))
   }
   
+  func testEvaluateVariableExpression() {
+    let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    try! interpreter.executed(statement: .variableDeclaration(name: varA, initializer: .literal(value: 1)))
+    XCTAssertEqual(ExpressionValue(rawValue: 1), try! interpreter.evaluate(expression: Expression.variable(name: varA)))
+  }
 }

@@ -29,16 +29,19 @@ fileprivate func basicInfo(token: Token) -> String {
 }
 
 public enum ParseError: Error, CustomStringConvertible {
-  case expectParen(token: Token)
+  case expectLeftParen(token: Token)
+  case expectRightParen(token: Token)
   case expectExpression(token: Token)
   case expectSemicolon(token: Token)
   case expectVariableName(token: Token)
   case invalidAssignmentTarget(token: Token)
-  case expectBrace(token: Token)
+  case expectRightBrace(token: Token)
   
   public var description: String {
     switch self {
-      case .expectParen(let token):
+      case .expectLeftParen(let token):
+        return "\(basicInfo(token: token)) Expect '(' after expression."
+      case .expectRightParen(let token):
         return "\(basicInfo(token: token)) Expect ')' after expression."
       case .expectExpression(let token):
         return "\(basicInfo(token: token)) Expect expression."
@@ -48,7 +51,7 @@ public enum ParseError: Error, CustomStringConvertible {
         return "\(basicInfo(token: token)) Expect variable name."
       case .invalidAssignmentTarget(let token):
         return "\(basicInfo(token: token)) Invalid assignment target."
-      case .expectBrace(let token):
+      case .expectRightBrace(let token):
         return "\(basicInfo(token: token)) Expect '}' after expression."
     }
   }

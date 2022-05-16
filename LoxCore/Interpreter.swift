@@ -42,6 +42,15 @@ extension Interpreter: StatementExecutor {
                            value: initializer == nil ? .nilValue : try evaluate(expression: initializer!))
       case .block(let statements):
         try executeBlock(statements: statements)
+      case .ifStatement(let condition, let thenBranch, let elseBranch):
+        let conditionResult = try evaluate(expression: condition)
+        if conditionResult.isTruthy {
+          try executed(statement: thenBranch)
+        } else {
+          if let elseBranch = elseBranch {
+            try executed(statement: elseBranch)
+          }
+        }
     }
   }
   

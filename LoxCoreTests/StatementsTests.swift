@@ -92,9 +92,11 @@ class StatementsTests: XCTestCase {
     let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
     try! interpreter.executed(statement: .variableDeclaration(name: varA, initializer: .literal(value: 1)))
     let blockA = Statement.block(statements: [
-      .variableDeclaration(name: varA, initializer: .literal(value: 1))
+      .variableDeclaration(name: varA, initializer: .literal(value: 1)),
+      .expression(.assign(name: varA, value: .literal(value: 100)))
     ])
     XCTAssertNoThrow(try interpreter.executed(statement: blockA))
+    XCTAssertEqual(try! interpreter.evaluate(expression: .variable(name: varA)), ExpressionValue.intValue(raw: 1))
   }
   
   func testBlockEnvironmentStackPop() {
@@ -106,4 +108,31 @@ class StatementsTests: XCTestCase {
     XCTAssertThrowsError(try interpreter.evaluate(expression: .variable(name: varA)))
   }
   
+  func testIfStatementThenBranchExecute() {
+    let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    try! interpreter.executed(statement: .variableDeclaration(name: varA, initializer: .literal(value: 1)))
+    let condition = Expression.literal(value: true)
+    let thenBlock = Statement.expression(.assign(name: varA, value: .literal(value: true)))
+    let elseBlock = Statement.expression(.assign(name: varA, value: .literal(value: false)))
+    let ifStatement = Statement.ifStatement(condition: condition, thenBranch: thenBlock, elseBranch: elseBlock)
+    let block = Statement.block(statements: [
+      ifStatement
+    ])
+    try! interpreter.executed(statement: block)
+    XCTAssertEqual(try! interpreter.evaluate(expression: .variable(name: varA)), ExpressionValue.boolValue(raw: true))
+  }
+  
+  func testIfStatementElseBranchExecute() {
+    let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    try! interpreter.executed(statement: .variableDeclaration(name: varA, initializer: .literal(value: 1)))
+    let condition = Expression.literal(value: false)
+    let thenBlock = Statement.expression(.assign(name: varA, value: .literal(value: true)))
+    let elseBlock = Statement.expression(.assign(name: varA, value: .literal(value: false)))
+    let ifStatement = Statement.ifStatement(condition: condition, thenBranch: thenBlock, elseBranch: elseBlock)
+    let block = Statement.block(statements: [
+      ifStatement
+    ])
+    try! interpreter.executed(statement: block)
+    XCTAssertEqual(try! interpreter.evaluate(expression: .variable(name: varA)), ExpressionValue.boolValue(raw: false))
+  }
 }

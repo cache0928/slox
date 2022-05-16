@@ -97,6 +97,17 @@ extension ExpressionValue: ExpressibleByStringLiteral {
 }
 
 extension ExpressionValue {
+  var isTruthy: Bool {
+    switch self {
+      case .boolValue(let raw):
+        return raw
+      case .nilValue:
+        return false
+      default:
+        return true
+    }
+  }
+  
   static func + (left: ExpressionValue, right: ExpressionValue) -> ExpressionValue? {
     switch (left, right) {
       case (.intValue(let leftRaw), .intValue(let rightRaw)):
@@ -171,14 +182,7 @@ extension ExpressionValue {
   }
   
   static prefix func ! (value: ExpressionValue) -> ExpressionValue {
-    switch value {
-      case .boolValue(let raw):
-        return .boolValue(raw: !raw)
-      case .nilValue:
-        return .boolValue(raw: true)
-      default:
-        return .boolValue(raw: false)
-    }
+    return .boolValue(raw: !value.isTruthy)
   }
   
   static func >= (lhs: ExpressionValue, rhs: ExpressionValue) -> ExpressionValue? {

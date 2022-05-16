@@ -30,6 +30,8 @@ struct Parser {
     return statements
   }
   
+  // MARK: - 解析语句
+  
   mutating func statement() throws -> Statement {
     if match(types: .VAR) {
       return try declarationStatement()
@@ -40,9 +42,13 @@ struct Parser {
     if match(types: .LEFT_BRACE) {
       return .block(statements: try blockStatement())
     }
+    if match(types: .IF) {
+      return try ifStatement()
+    }
     return try expressionStatement()
   }
   
+  // 变量定义语句
   private mutating func declarationStatement() throws -> Statement {
     let varName = try attemp(consume: .IDENTIFIER, else: ParseError.expectVariableName(token: currentToken))
     var initializer: Expression? = nil
@@ -53,26 +59,41 @@ struct Parser {
     return .variableDeclaration(name: varName, initializer: initializer)
   }
   
+  // 表达式语句
   private mutating func expressionStatement() throws -> Statement {
     let expression = try expression()
     try attemp(consume: .SEMICOLON, else: ParseError.expectSemicolon(token: currentToken))
     return .expression(expression)
   }
   
+  // print语句
   private mutating func printStatement() throws -> Statement {
     let expression = try expression()
     try attemp(consume: .SEMICOLON, else: ParseError.expectSemicolon(token: currentToken))
     return .print(expression: expression)
   }
   
+  // 作用域块
   private mutating func blockStatement() throws -> [Statement] {
     var statements: [Statement] = []
     while !check(type: .RIGHT_BRACE) && !isAtEnd {
       statements.append(try statement())
     }
-    try attemp(consume: .RIGHT_BRACE, else: ParseError.expectBrace(token: currentToken))
+    try attemp(consume: .RIGHT_BRACE, else: ParseError.expectRightBrace(token: currentToken))
     return statements
   }
+  
+  // if块
+  private mutating func ifStatement() throws -> Statement {
+    try attemp(consume: .LEFT_PAREN, else: ParseError.expectLeftParen(token: currentToken))
+    let condition = try expression()
+    try attemp(consume: .RIGHT_PAREN, else: ParseError.expectRightParen(token: currentToken))
+    let thenBranch = try statement()
+    let elseBranch = match(types: .ELSE) ? try statement() : nil
+    return .ifStatement(condition: condition, thenBranch: thenBranch, elseBranch: elseBranch)
+  }
+  
+  // MARK: - 解析表达式
   
   mutating func expression() throws -> Expression {
     return try assignment()
@@ -172,11 +193,13 @@ struct Parser {
     }
     if match(types: .LEFT_PAREN) {
       let expr = try expression()
-      try attemp(consume: .RIGHT_PAREN, else: ParseError.expectParen(token: currentToken))
+      try attemp(consume: .RIGHT_PAREN, else: ParseError.expectRightParen(token: currentToken))
       return .grouping(expression: expr)
     }
     throw ParseError.expectExpression(token: currentToken)
   }
+  
+  // MARK: - 工具方法
   
   private mutating func synchronize() {
     advanceIndex()
