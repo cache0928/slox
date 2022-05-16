@@ -15,17 +15,10 @@ struct Parser {
     self.tokens = tokens
   }
   
-  mutating func parse() -> [Statement] {
+  mutating func parse() throws -> [Statement] {
     var statements: [Statement] = []
     while !isAtEnd {
-      do {
-        statements.append(try statement())
-      } catch {
-        // 此处只有ParseError
-        // 语法错误，进入错误恢复模式
-        synchronize()
-        continue
-      }
+      statements.append(try statement())
     }
     return statements
   }

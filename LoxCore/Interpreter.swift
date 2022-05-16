@@ -17,7 +17,7 @@ public final class Interpreter  {
   public func interpret(code: String) throws {
     var scanner = Scanner(source: code)
     var parser = Parser(tokens: try scanner.scanTokens())
-    let statements = parser.parse()
+    let statements = try parser.parse()
     try interpret(statements: statements)
   }
   
