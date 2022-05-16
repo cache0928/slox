@@ -100,9 +100,9 @@ struct Parser {
   }
   
   // 赋值表达式
-  // IDENTIFIER "=" assignment | equality
+  // IDENTIFIER "=" assignment | logic_or ;
   private mutating func assignment() throws -> Expression {
-    let expr = try equality()
+    let expr = try or()
     if match(types: .EQUAL) {
       let equalToken = previousToken!
       let value = try assignment()
@@ -112,6 +112,30 @@ struct Parser {
       return .assign(name: varName, value: value)
     }
     return expr
+  }
+  
+  // 逻辑或表达式
+  // logic_or       → logic_and ( "or" logic_and )*
+  private mutating func or() throws -> Expression {
+    let left = try and()
+    while match(types: .OR) {
+      let op = previousToken!
+      let right = try or()
+      return .logical(left: left, op: op, right: right)
+    }
+    return left
+  }
+  
+  // 逻辑与表达式
+  // logic_and      → equality ( "and" equality )*
+  private mutating func and() throws -> Expression {
+    let left = try equality()
+    while match(types: .AND) {
+      let op = previousToken!
+      let right = try and()
+      return .logical(left: left, op: op, right: right)
+    }
+    return left
   }
   
   // 等式表达式

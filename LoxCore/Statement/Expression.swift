@@ -14,6 +14,7 @@ public indirect enum Expression {
   case unary(op: Token, right: Expression)
   case variable(name: Token)
   case assign(name: Token, value: Expression)
+  case logical(left: Expression, op: Token, right: Expression)
 }
 
 extension Expression: CustomStringConvertible {
@@ -31,6 +32,8 @@ extension Expression: CustomStringConvertible {
         return "(variable \(name.lexeme))"
       case .assign(let name, let value):
         return "(assign \(value.description) to \(name.lexeme))"
+      case .logical(let left, let op, let right):
+        return "(\(op.lexeme) \(left.description) \(right.description))"
     }
   }
 }

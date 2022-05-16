@@ -265,4 +265,34 @@ class ExpressionTests: XCTestCase {
     try! interpreter.executed(statement: .variableDeclaration(name: varA, initializer: .literal(value: 1)))
     XCTAssertEqual(ExpressionValue(rawValue: 1), try! interpreter.evaluate(expression: Expression.variable(name: varA)))
   }
+  
+  func testEvaluateLogicalAndExpression() {
+    let expr = Expression.logical(left: .literal(value: true),
+                                  op: Token(type: .AND, lexeme: "and", line: 1),
+                                  right: .literal(value: false))
+    XCTAssertEqual(try! interpreter.evaluate(expression: expr), ExpressionValue.boolValue(raw: false))
+    let expr2 = Expression.logical(left: .literal(value: nil),
+                                  op: Token(type: .AND, lexeme: "and", line: 1),
+                                  right: .literal(value: 1))
+    XCTAssertEqual(try! interpreter.evaluate(expression: expr2), ExpressionValue.boolValue(raw: false))
+    let expr3 = Expression.logical(left: .literal(value: true),
+                                  op: Token(type: .AND, lexeme: "and", line: 1),
+                                  right: .literal(value: true))
+    XCTAssertEqual(try! interpreter.evaluate(expression: expr3), ExpressionValue.boolValue(raw: true))
+  }
+  
+  func testEvaluateLogicalOrExpression() {
+    let expr = Expression.logical(left: .literal(value: true),
+                                  op: Token(type: .OR, lexeme: "or", line: 1),
+                                  right: .literal(value: false))
+    XCTAssertEqual(try! interpreter.evaluate(expression: expr), ExpressionValue.boolValue(raw: true))
+    let expr2 = Expression.logical(left: .literal(value: nil),
+                                  op: Token(type: .OR, lexeme: "or", line: 1),
+                                  right: .literal(value: 1))
+    XCTAssertEqual(try! interpreter.evaluate(expression: expr2), ExpressionValue.boolValue(raw: true))
+    let expr3 = Expression.logical(left: .literal(value: false),
+                                  op: Token(type: .OR, lexeme: "or", line: 1),
+                                  right: .literal(value: false))
+    XCTAssertEqual(try! interpreter.evaluate(expression: expr3), ExpressionValue.boolValue(raw: false))
+  }
 }

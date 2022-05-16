@@ -90,6 +90,19 @@ extension Interpreter: StatementExecutor {
         let value = try evaluate(expression: valueExpression)
         try environmentStack.last?.assign(variable: varName, value: value)
         return value
+      case .logical(let left, let op, let right):
+        let leftResult = try evaluate(expression: left)
+        switch op.type {
+          case .OR:
+            if leftResult.isTruthy {
+              return .boolValue(raw: true)
+            }
+          default:
+            if !leftResult.isTruthy {
+              return .boolValue(raw: false)
+            }
+        }
+        return .boolValue(raw: try evaluate(expression: right).isTruthy)
     }
   }
 }
