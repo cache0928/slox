@@ -1,14 +1,14 @@
 //
-//  ParserTests.swift
+//  StatementsTests.swift
 //  LoxCoreTests
 //
-//  Created by 徐才超 on 2022/5/1.
+//  Created by 徐才超 on 2022/5/7.
 //
 
 import XCTest
 @testable import LoxCore
 
-class ExpressionTests: XCTestCase {
+class InterpreterTests: XCTestCase {
   var interpreter: Interpreter!
   
   override func setUpWithError() throws {
@@ -19,156 +19,6 @@ class ExpressionTests: XCTestCase {
   override func tearDownWithError() throws {
     interpreter = nil
     try super.tearDownWithError()
-  }
-  
-  func testAstDescription() {
-    let expr = Expression.binary(
-      left: .unary(op: Token(type: .MINUS, lexeme: "-", line: 1), right: .literal(value: 123)),
-      right: .grouping(expression: .literal(value: 45.67)),
-      op: Token(type: .STAR, lexeme: "*", line: 1)
-    )
-    XCTAssertEqual(expr.description, "(* (- 123) (group 45.67))")
-  }
-  
-  func testParsePrimary() {
-    let boolTokens = [
-      Token(type: .TRUE, lexeme: "true", line: 1, literal: true),
-      Token(type: .FALSE, lexeme: "false", line: 1, literal: false),
-    ]
-    for token in boolTokens {
-      var parser = Parser(tokens: [token, Token(type: .EOF, lexeme: "", line: 1)])
-      if case let .literal(value) = try! parser.expression() {
-        XCTAssertEqual(value as! Bool, token.literal as! Bool)
-      } else {
-        XCTFail()
-      }
-      
-    }
-    var parser = Parser(tokens: [
-      Token(type: .DOUBLE, lexeme: "123.45", line: 1, literal: 123.45),
-      Token(type: .EOF, lexeme: "", line: 1)
-    ])
-    if case let .literal(value) = try! parser.expression() {
-      XCTAssertEqual(value as! Double, 123.45)
-    } else {
-      XCTFail()
-    }
-    parser = Parser(tokens: [
-      Token(type: .STRING, lexeme: "test string", line: 1, literal: "test string"),
-      Token(type: .EOF, lexeme: "", line: 1)
-    ])
-    if case let .literal(value) = try! parser.expression() {
-      XCTAssertEqual(value as! String, "test string")
-    } else {
-      XCTFail()
-    }
-    parser = Parser(tokens: [
-      Token(type: .NIL, lexeme: "nil", line: 1),
-      Token(type: .EOF, lexeme: "", line: 1)
-    ])
-    if case let .literal(value) = try! parser.expression() {
-      XCTAssertNil(value)
-    } else {
-      XCTFail()
-    }
-  }
-  
-  func testParseUnary() {
-    var parser = Parser(tokens: [
-      Token(type: .BANG, lexeme: "!", line: 1),
-      Token(type: .TRUE, lexeme: "true", line: 1, literal: true),
-      Token(type: .EOF, lexeme: "", line: 1)
-    ])
-    if case let .unary(op, right) = try! parser.expression(),
-        case let .literal(value) = right {
-      XCTAssertEqual(op.type, .BANG)
-      XCTAssertEqual(value as? Bool, true)
-    } else {
-      XCTFail()
-    }
-  }
-  
-  func testParseFactor() {
-    var parser = Parser(tokens: [
-      Token(type: .INT, lexeme: "100", line: 1, literal: 100),
-      Token(type: .STAR, lexeme: "*", line: 1),
-      Token(type: .DOUBLE, lexeme: "4.5", line: 1, literal: 4.5),
-      Token(type: .EOF, lexeme: "", line: 1)
-    ])
-    if case let .binary(left, right, op) = try! parser.expression(),
-       case let .literal(leftValue) = left,
-        case let .literal(rightValue) = right {
-      XCTAssertEqual(op.type, .STAR)
-      XCTAssertEqual(leftValue as? Int, 100)
-      XCTAssertEqual(rightValue as? Double, 4.5)
-    } else {
-      XCTFail()
-    }
-  }
-  
-  func testParseTerm() {
-    var parser = Parser(tokens: [
-      Token(type: .INT, lexeme: "100", line: 1, literal: 100),
-      Token(type: .MINUS, lexeme: "-", line: 1),
-      Token(type: .DOUBLE, lexeme: "4.5", line: 1, literal: 4.5),
-      Token(type: .EOF, lexeme: "", line: 1)
-    ])
-    if case let .binary(left, right, op) = try! parser.expression(),
-       case let .literal(leftValue) = left,
-        case let .literal(rightValue) = right {
-      XCTAssertEqual(op.type, .MINUS)
-      XCTAssertEqual(leftValue as? Int, 100)
-      XCTAssertEqual(rightValue as? Double, 4.5)
-    } else {
-      XCTFail()
-    }
-  }
-  
-  func testParseComparsion() {
-    var parser = Parser(tokens: [
-      Token(type: .INT, lexeme: "100", line: 1, literal: 100),
-      Token(type: .GREATER_EQUAL, lexeme: ">=", line: 1),
-      Token(type: .DOUBLE, lexeme: "4.5", line: 1, literal: 4.5),
-      Token(type: .EOF, lexeme: "", line: 1)
-    ])
-    if case let .binary(left, right, op) = try! parser.expression(),
-       case let .literal(leftValue) = left,
-        case let .literal(rightValue) = right {
-      XCTAssertEqual(op.type, .GREATER_EQUAL)
-      XCTAssertEqual(leftValue as? Int, 100)
-      XCTAssertEqual(rightValue as? Double, 4.5)
-    } else {
-      XCTFail()
-    }
-  }
-  
-  func testParseEequality() {
-    var parser = Parser(tokens: [
-      Token(type: .INT, lexeme: "100", line: 1, literal: 100),
-      Token(type: .EQUAL_EQUAL, lexeme: "==", line: 1),
-      Token(type: .DOUBLE, lexeme: "4.5", line: 1, literal: 4.5),
-      Token(type: .EOF, lexeme: "", line: 1)
-    ])
-    if case let .binary(left, right, op) = try! parser.expression(),
-       case let .literal(leftValue) = left,
-        case let .literal(rightValue) = right {
-      XCTAssertEqual(op.type, .EQUAL_EQUAL)
-      XCTAssertEqual(leftValue as? Int, 100)
-      XCTAssertEqual(rightValue as? Double, 4.5)
-    } else {
-      XCTFail()
-    }
-  }
-  
-  func testExceptRightParen() {
-    var parser = Parser(tokens: [
-      Token(type: .LEFT_PAREN, lexeme: "(", line: 1),
-      Token(type: .INT, lexeme: "1", line: 1, literal: 1),
-      Token(type: .PLUS, lexeme: "+", line: 1),
-      Token(type: .INT, lexeme: "2", line: 1, literal: 2),
-      Token(type: .EOF, lexeme: "", line: 1)
-    ])
-    XCTAssertThrowsError(try parser.expression())
   }
   
   func testEvaluateLiteralExpression() {
@@ -262,7 +112,7 @@ class ExpressionTests: XCTestCase {
   
   func testEvaluateVariableExpression() {
     let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
-    try! interpreter.executed(statement: .variableDeclaration(name: varA, initializer: .literal(value: 1)))
+    try! interpreter.execute(statement: .variableDeclaration(name: varA, initializer: .literal(value: 1)))
     XCTAssertEqual(ExpressionValue(rawValue: 1), try! interpreter.evaluate(expression: Expression.variable(name: varA)))
   }
   
@@ -295,4 +145,235 @@ class ExpressionTests: XCTestCase {
                                   right: .literal(value: false))
     XCTAssertEqual(try! interpreter.evaluate(expression: expr3), ExpressionValue.boolValue(raw: false))
   }
+  
+  func testExecuteExpressionStatement() {
+    let statement = Statement.expression(.binary(left: .literal(value: 10),
+                                                 right: .literal(value: 20),
+                                                 op: Token(type: .PLUS, lexeme: "+", line: 1)))
+    XCTAssertNoThrow(try interpreter.execute(statement: statement))
+  }
+  
+  func testGetVariableBeforeDecalre() {
+    let variableExpr = Expression.variable(name: Token(type: .IDENTIFIER, lexeme: "a", line: 1))
+    XCTAssertThrowsError(try interpreter.evaluate(expression: variableExpr))
+  }
+  
+  func testDeclareVariable() {
+    let varName = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let code = "var a = 10;"
+    try! interpreter.interpret(code: code)
+    let variableExpr = Expression.variable(name: varName)
+    XCTAssertEqual(ExpressionValue(rawValue: 10), try! interpreter.evaluate(expression: variableExpr))
+  }
+  
+  func testDeclareVariableWithoutInitializer() {
+    let varName = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let variableDeclStatement = Statement.variableDeclaration(name: varName)
+    try! interpreter.execute(statement: variableDeclStatement)
+    let variableExpr = Expression.variable(name: varName)
+    XCTAssertEqual(ExpressionValue(rawValue: nil), try! interpreter.evaluate(expression: variableExpr))
+  }
+  
+  func testAssignValueToExistVariable() {
+    let varName = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let code = """
+               var a = 10;
+               a = 100;
+               """
+    try! interpreter.interpret(code: code)
+    let variableExpr = Expression.variable(name: varName)
+    XCTAssertEqual(ExpressionValue(rawValue: 100), try! interpreter.evaluate(expression: variableExpr))
+  }
+  
+  func testAssignValueToNotExistVariable() {
+    let varName = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let assignment = Expression.assign(name: varName, value: .literal(value: 100))
+    XCTAssertThrowsError(try interpreter.evaluate(expression: assignment))
+  }
+  
+  func testAssignmentRecursivly() {
+    let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let varB = Token(type: .IDENTIFIER, lexeme: "b", line: 1)
+    let code = """
+               var a;
+               var b;
+               a = b = 100;
+               """
+    try! interpreter.interpret(code: code)
+    let valueA = try! interpreter.evaluate(expression: Expression.variable(name: varA))
+    let valueB = try! interpreter.evaluate(expression: Expression.variable(name: varB))
+    XCTAssertEqual(valueB, ExpressionValue.intValue(raw: 100))
+    XCTAssertEqual(valueA, valueB)
+  }
+  
+  func testBlockEnvironmentStackPush() {
+    let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let code = """
+               var a = 1;
+               {
+                 var a = 1;
+                 a = 10;
+               }
+               """
+    try! interpreter.interpret(code: code)
+    XCTAssertEqual(try! interpreter.evaluate(expression: .variable(name: varA)), ExpressionValue.intValue(raw: 1))
+  }
+  
+  func testBlockEnvironmentStackPop() {
+    let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let code = """
+               {
+                 var a = 100;
+               }
+               """
+    try! interpreter.interpret(code: code)
+    XCTAssertThrowsError(try interpreter.evaluate(expression: .variable(name: varA)))
+  }
+  
+  func testIfStatementThenBranchExecute() {
+    let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let code = """
+               var a;
+               if (true) { a = true; } else { a = false; }
+               """
+    try! interpreter.interpret(code: code)
+    XCTAssertEqual(try! interpreter.evaluate(expression: .variable(name: varA)), ExpressionValue.boolValue(raw: true))
+  }
+  
+  func testIfStatementElseBranchExecute() {
+    let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let code = """
+               var a;
+               if (false) { a = true; } else { a = false; }
+               """
+    try! interpreter.interpret(code: code)
+    XCTAssertEqual(try! interpreter.evaluate(expression: .variable(name: varA)), ExpressionValue.boolValue(raw: false))
+  }
+  
+  func testWhileStatementExecute() {
+    let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let code = """
+               var a = 1;
+               while (a < 3) { a = a + 1; }
+               """
+    try! interpreter.interpret(code: code)
+    XCTAssertEqual(try! interpreter.evaluate(expression: .variable(name: varA)), ExpressionValue.intValue(raw: 3))
+  }
+  
+  func testForStatementExecute() {
+    let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let code = """
+               var a = 0;
+               for(var i = 0; i < 3; i = i + 1) { a = a + 1; }
+               """
+    try! interpreter.interpret(code: code)
+    XCTAssertEqual(try! interpreter.evaluate(expression: .variable(name: varA)), ExpressionValue.intValue(raw: 3))
+  }
+  
+  func testCallNativeFunction() {
+    let code = """
+               clock();
+               """
+    XCTAssertNoThrow(try interpreter.interpret(code: code))
+  }
+  
+  func testCallInvalidCallable() {
+    let code = """
+               "func"();
+               """
+    XCTAssertThrowsError(try interpreter.interpret(code: code))
+  }
+  
+  func testDeclareFunction() {
+    let funcName = Token(type: .IDENTIFIER, lexeme: "test", line: 1)
+    let code = "fun test(a, b) { print 123; }"
+    try! interpreter.interpret(code: code)
+    let variableExpr = Expression.variable(name: funcName)
+    guard let value = try? interpreter.evaluate(expression: variableExpr),
+          case let .anyValue(raw) = value else {
+      XCTFail()
+      return
+    }
+    XCTAssertTrue(raw is Function)
+  }
+  
+  func testCallDeclaredFunction() {
+    let code = """
+               fun test(a, b) { print 123; }
+               test(1, 2);
+               """
+    XCTAssertNoThrow(try interpreter.interpret(code: code))
+  }
+  
+  func testCallFunctionWithUnexceptArgumentsCount() {
+    let code = """
+               fun test() { print 123; }
+               test(1, 2);
+               """
+    XCTAssertThrowsError(try interpreter.interpret(code: code))
+  }
+  
+  func testCallFunctionRecursivly() {
+    let varName = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let code = """
+               var a = 0;
+               fun test() {
+                 a = a + 1;
+                 if (a < 10) {
+                   test();
+                 }
+               }
+               test();
+               """
+    try! interpreter.interpret(code: code)
+    XCTAssertEqual(try! interpreter.evaluate(expression: .variable(name: varName)), ExpressionValue.intValue(raw: 10))
+  }
+  
+  func testCallFunctionWithReturnValue() {
+    let varName = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let code = """
+               fun test() {
+                 return "string";
+               }
+               var a = test();
+               """
+    try! interpreter.interpret(code: code)
+    XCTAssertEqual(try! interpreter.evaluate(expression: .variable(name: varName)), ExpressionValue.stringValue(raw: "string"))
+  }
+  
+  func testCallFunctionWithReturnVoid() {
+    let varName = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let code = """
+               fun test() {
+                 return;
+               }
+               var a = test();
+               """
+    try! interpreter.interpret(code: code)
+    XCTAssertEqual(try! interpreter.evaluate(expression: .variable(name: varName)), ExpressionValue.anyValue(raw: ()))
+  }
+  
+  func testLocalFunctionClosureCapture() {
+    let code = """
+               fun makeCounter() {
+                 var i = 0;
+                 fun count() {
+                   i = i + 1;
+                   return i;
+                 }
+
+                 return count;
+               }
+
+               var counter = makeCounter();
+               var a = counter();
+               var b = counter();
+               """
+    try! interpreter.interpret(code: code)
+    let varA = Token(type: .IDENTIFIER, lexeme: "a", line: 1)
+    let varB = Token(type: .IDENTIFIER, lexeme: "b", line: 1)
+    XCTAssertEqual(try! interpreter.evaluate(expression: .variable(name: varA)), ExpressionValue.intValue(raw: 1))
+    XCTAssertEqual(try! interpreter.evaluate(expression: .variable(name: varB)), ExpressionValue.intValue(raw: 2))
+  }
+
 }

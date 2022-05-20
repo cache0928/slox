@@ -35,10 +35,10 @@
   - [ ] Challenge 1: Add support to the REPL to let users type in both statements and expressions.
   - [ ] Challenge 2: Make it a runtime error to access a variable that has not been initialized or assigned to
   
-- [ ] 9. [**Control Flow**](http://www.craftinginterpreters.com/control-flow.html)
+- [x] 9. [**Control Flow**](http://www.craftinginterpreters.com/control-flow.html)
   - [ ] Challenge 3: Add support for break statements.
   
-- [ ] 10. [**Functions**](http://www.craftinginterpreters.com/functions.html)
+- [x] 10. [**Functions**](http://www.craftinginterpreters.com/functions.html)
   - [ ] Challenge 2: Add anonymous function (lambdas) syntax.
   
 - [ ] 11. [**Resolving and Binding**](http://www.craftinginterpreters.com/resolving-and-binding.html)

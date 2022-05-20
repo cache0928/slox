@@ -9,26 +9,18 @@ import Foundation
 
 final class Environment {
   private var values: [String: ExpressionValue] = [:]
-  private let enclosing: Environment?
+  private(set) var enclosing: Environment?
   
   init(enclosing: Environment? = nil) {
     self.enclosing = enclosing
   }
   
-  subscript(variable: Token) -> ExpressionValue {
-    get throws {
-      guard values.keys.contains(variable.lexeme) else {
-        if let parent = enclosing {
-          return try parent[variable]
-        }
-        throw RuntimeError.undefinedVariable(token: variable)
-      }
-      return values[variable.lexeme]!
-    }
+  func set(enclosing: Environment) {
+    self.enclosing = enclosing
   }
   
-  func define(variable: Token, value: ExpressionValue) {
-    values[variable.lexeme] = value
+  func define(variableName: String, value: ExpressionValue) {
+    values[variableName] = value
   }
   
   func assign(variable: Token, value: ExpressionValue) throws {
@@ -40,5 +32,15 @@ final class Environment {
       throw RuntimeError.undefinedVariable(token: variable)
     }
     values[variable.lexeme] = value
+  }
+  
+  func get(variable: Token) throws -> ExpressionValue {
+    guard values.keys.contains(variable.lexeme) else {
+      if let parent = enclosing {
+        return try parent.get(variable: variable)
+      }
+      throw RuntimeError.undefinedVariable(token: variable)
+    }
+    return values[variable.lexeme]!
   }
 }

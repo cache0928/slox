@@ -14,6 +14,13 @@ public enum ExpressionValue {
   case doubleValue(raw: Double)
   case stringValue(raw: String)
   case anyValue(raw: Any)
+  
+  var callable: Callable? {
+    guard case .anyValue(let raw) = self else {
+      return nil
+    }
+    return raw as? Callable
+  }
 }
 
 extension ExpressionValue: CustomStringConvertible {
@@ -260,6 +267,8 @@ extension ExpressionValue {
       case (.boolValue(let leftRaw), .boolValue(let rightRaw)):
         return .boolValue(raw: leftRaw == rightRaw)
       case (.nilValue, .nilValue):
+        return .boolValue(raw: true)
+      case (.anyValue(let leftRaw), .anyValue(let rightRaw)) where leftRaw is Void && rightRaw is Void:
         return .boolValue(raw: true)
       default:
         return .boolValue(raw: false)

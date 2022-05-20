@@ -7,6 +7,10 @@
 
 import Foundation
 
+enum ReturnValue: Error {
+  case value(_: ExpressionValue = ExpressionValue.anyValue(raw: ()))
+}
+
 public indirect enum Statement {
   // exprStmt       → expression ";"
   case expression(_: Expression)
@@ -20,4 +24,8 @@ public indirect enum Statement {
   case ifStatement(condition: Expression, thenBranch: Statement, elseBranch: Statement?)
   // whileStmt      → "while" "(" expression ")" statement
   case whileStatement(condition: Expression, body: Statement)
+  // funDecl        → "fun" IDENTIFIER "(" (IDENTIFIER ( "," IDENTIFIER )*)? ")" block
+  case functionDeclaration(name: Token, params: [Token], body: Statement)
+  // returnStmt     → "return" expression? ";"
+  case returnStatement(keyword: Token, value: Expression? = nil)
 }

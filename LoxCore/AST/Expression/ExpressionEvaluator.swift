@@ -9,12 +9,10 @@ import Foundation
 
 protocol ExpressionEvaluator {
   func evaluate(expression: Expression) throws -> ExpressionValue
-  func evaluateUnary(op: Token, right: Expression) throws -> ExpressionValue
-  func evaluateBinary(op: Token, left: Expression, right: Expression) throws -> ExpressionValue
 }
 
 extension ExpressionEvaluator {
-   func evaluateUnary(op: Token, right: Expression) throws -> ExpressionValue {
+  func evaluateUnary(op: Token, right: Expression) throws -> ExpressionValue {
     let rightValue = try evaluate(expression: right)
     switch op.type {
       case .MINUS:
@@ -32,12 +30,11 @@ extension ExpressionEvaluator {
   func evaluateBinary(op: Token, left: Expression, right: Expression) throws -> ExpressionValue {
     func evaluateOp(leftValue: ExpressionValue,
                     rightValue: ExpressionValue,
-                    `operator`: (ExpressionValue, ExpressionValue) -> ExpressionValue?,
-                    errorMessage: String = "Operands must be two numbers.") throws -> ExpressionValue  {
+                    `operator`: (ExpressionValue, ExpressionValue) -> ExpressionValue?) throws -> ExpressionValue  {
       guard let result = `operator`(leftValue, rightValue) else {
         throw RuntimeError.operandError(
           token: op,
-          message: errorMessage
+          message: op.type == .PLUS ? "Operands must be two numbers or two strings." : "Operands must be two numbers."
         )
       }
       return result
@@ -47,9 +44,7 @@ extension ExpressionEvaluator {
     let rightValue = try evaluate(expression: right)
     switch op.type {
       case .PLUS:
-        return try evaluateOp(leftValue: leftValue, rightValue: rightValue,
-                              operator: +,
-                              errorMessage: "Operands must be two numbers or two strings.")
+        return try evaluateOp(leftValue: leftValue, rightValue: rightValue, operator: +)
       case .MINUS:
         return try evaluateOp(leftValue: leftValue, rightValue: rightValue, operator: -)
       case .STAR:
@@ -72,8 +67,4 @@ extension ExpressionEvaluator {
         throw RuntimeError.operandError(token: op, message: "Unsupport binary operator.")
     }
   }
-}
-
-protocol StatementExecutor: ExpressionEvaluator {
-  func executed(statement: Statement) throws 
 }

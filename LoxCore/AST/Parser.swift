@@ -27,13 +27,16 @@ struct Parser {
   
   mutating func statement() throws -> Statement {
     if match(types: .VAR) {
-      return try declarationStatement()
+      return try variableDeclarationStatement()
+    }
+    if match(types: .FUN) {
+      return try callableDeclarationStatement(description: "function")
     }
     if match(types: .PRINT) {
       return try printStatement()
     }
     if match(types: .LEFT_BRACE) {
-      return .block(statements: try blockStatement())
+      return try blockStatement()
     }
     if match(types: .IF) {
       return try ifStatement()
@@ -44,11 +47,14 @@ struct Parser {
     if match(types: .FOR) {
       return try forStatement()
     }
+    if match(types: .RETURN) {
+      return try returnStatement()
+    }
     return try expressionStatement()
   }
   
   // 变量定义语句
-  private mutating func declarationStatement() throws -> Statement {
+  private mutating func variableDeclarationStatement() throws -> Statement {
     let varName = try attemp(consume: .IDENTIFIER, else: ParseError.expectVariableName(token: currentToken))
     var initializer: Expression? = nil
     if match(types: .EQUAL) {
@@ -56,6 +62,44 @@ struct Parser {
     }
     try attemp(consume: .SEMICOLON, else: ParseError.expectSemicolon(token: currentToken))
     return .variableDeclaration(name: varName, initializer: initializer)
+  }
+  
+  // function定义语句
+  private mutating func callableDeclarationStatement(description: String) throws -> Statement {
+    // 解析函数名
+    let name = try attemp(consume: .IDENTIFIER,
+                          else: ParseError.expectVariableName(token: currentToken, message: "Expect \(description) name."))
+    try attemp(consume: .LEFT_PAREN, else: ParseError.expectLeftParen(token: currentToken,
+                                                                      message: "Expect '(' after \(description) name."))
+    // 解析函数参数
+    var params: [Token] = []
+    if !match(types: .RIGHT_PAREN) {
+      repeat {
+        if params.count >= 255 {
+          throw ParseError.tooManyArguments(token: currentToken, message: "Can't have more than 255 parameters.")
+        }
+        params.append(try attemp(consume: .IDENTIFIER, else: ParseError.expectVariableName(token: currentToken,
+                                                                                           message: "Expect parameter name.")))
+      } while match(types: .COMMA)
+      try attemp(consume: .RIGHT_PAREN, else: ParseError.expectRightParen(token: currentToken,
+                                                                          message: "Expect ')' after parameters."))
+    }
+    // 解析函数体
+    try attemp(consume: .LEFT_BRACE, else: ParseError.expectLeftBrace(token: currentToken,
+                                                                      message: "Expect '{' before \(description) body."))
+    let body = try blockStatement()
+    return .functionDeclaration(name: name, params: params, body: body)
+  }
+  
+  // return语句
+  private mutating func returnStatement() throws -> Statement {
+    let keyword = previousToken!
+    var expr: Expression? = nil
+    if !check(type: .SEMICOLON) {
+      expr = try expression()
+    }
+    try attemp(consume: .SEMICOLON, else: ParseError.expectSemicolon(token: currentToken, message: "Expect ';' after return value."))
+    return .returnStatement(keyword: keyword, value: expr)
   }
   
   // 表达式语句
@@ -73,13 +117,13 @@ struct Parser {
   }
   
   // 作用域块
-  private mutating func blockStatement() throws -> [Statement] {
+  private mutating func blockStatement() throws -> Statement {
     var statements: [Statement] = []
     while !check(type: .RIGHT_BRACE) && !isAtEnd {
       statements.append(try statement())
     }
     try attemp(consume: .RIGHT_BRACE, else: ParseError.expectRightBrace(token: currentToken))
-    return statements
+    return .block(statements: statements)
   }
   
   // if块
@@ -132,12 +176,13 @@ struct Parser {
   
   // MARK: - 解析表达式
   
+  // expression     → assignment
   mutating func expression() throws -> Expression {
     return try assignment()
   }
   
   // 赋值表达式
-  // IDENTIFIER "=" assignment | logic_or ;
+  // assignment     → IDENTIFIER "=" assignment | logic_or
   private mutating func assignment() throws -> Expression {
     let expr = try or()
     if match(types: .EQUAL) {
@@ -176,7 +221,7 @@ struct Parser {
   }
   
   // 等式表达式
-  // comparison ( ( "!=" | "==" ) comparison )*
+  // equality       → comparison ( ( "!=" | "==" ) comparison )*
   private mutating func equality() throws -> Expression {
     var expr = try comparsion()
     while match(types: .BANG_EQUAL, .EQUAL_EQUAL) {
@@ -188,7 +233,7 @@ struct Parser {
   }
   
   // 比较表达式
-  // term ( ( ">" | ">=" | "<" | "<=" ) term )*
+  // comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )*
   private mutating func comparsion() throws -> Expression {
     var expr = try term()
     while match(types: .GREATER, .GREATER_EQUAL, .LESS, .LESS_EQUAL) {
@@ -200,7 +245,7 @@ struct Parser {
   }
   
   // 加减法表达式
-  // factor ( ( "-" | "+" ) factor )*
+  // term           → factor ( ( "-" | "+" ) factor )*
   private mutating func term() throws -> Expression {
     var expr = try factor()
     while match(types: .MINUS, .PLUS) {
@@ -212,7 +257,7 @@ struct Parser {
   }
   
   // 乘除法表达式
-  // unary ( ( "/" | "*" ) unary )*
+  // factor         → unary ( ( "/" | "*" ) unary )*
   private mutating func factor() throws -> Expression {
     var expr = try unary()
     while match(types: .SLASH, .STAR) {
@@ -224,18 +269,42 @@ struct Parser {
   }
   
   // 一元表达式
-  // ( "!" | "-" ) unary | primary
+  // unary          → ( "!" | "-" ) unary | call
   private mutating func unary() throws -> Expression {
     if match(types: .BANG, .MINUS) {
       let op = previousToken!
       let right = try unary()
       return .unary(op: op, right: right)
     }
-    return try primary()
+    return try call()
+  }
+  
+  // 调用表达式
+  // call           → primary ( "(" arguments? ")" )*
+  // arguments      → expression ( "," expression )* 
+  private mutating func call() throws -> Expression {
+    func finish(callee: Expression) throws -> Expression {
+      var arguments: [Expression] = []
+      if !check(type: .RIGHT_PAREN)  {
+        repeat {
+          if arguments.count >= 255 {
+            throw ParseError.tooManyArguments(token: currentToken)
+          }
+          arguments.append(try expression())
+        } while(match(types: .COMMA))
+      }
+      try attemp(consume: .RIGHT_PAREN, else: ParseError.expectRightParen(token: currentToken))
+      return .call(callee: callee, arguments: arguments, rightParen: previousToken!)
+    }
+    var call = try primary()
+    while match(types: .LEFT_PAREN) {
+      call = try finish(callee: call)
+    }
+    return call
   }
   
   // 主表达式
-  // NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER 
+  // primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER
   private mutating func primary() throws -> Expression {
     if match(types: .FALSE) {
       return .literal(value: false)
