@@ -12,20 +12,36 @@ enum ReturnValue: Error {
 }
 
 public indirect enum Statement {
-  // exprStmt       → expression ";"
+  /// 表达式语句
+  ///
+  ///     exprStmt       → expression ";"
   case expression(_: Expression)
-  // printStmt      → "print" expression ";"
+  /// print语句
+  ///
+  ///     printStmt      → "print" expression ";"
   case print(expression: Expression)
-  // varDecl        → "var" IDENTIFIER ( "=" expression )? ";"
+  /// 变量定义语句
+  ///
+  ///     varDecl        → "var" IDENTIFIER ( "=" expression )? ";"
   case variableDeclaration(name: Token, initializer: Expression? = nil)
-  // block          → "{" statement* "}"
+  /// 块语句
+  ///
+  ///     block          → "{" statement* "}"
   case block(statements: [Statement])
-  // ifStmt         → "if" "(" expression ")" statement ( "else" statement )?
+  /// if语句
+  ///
+  ///     ifStmt         → "if" "(" expression ")" statement ( "else" statement )?
   case ifStatement(condition: Expression, thenBranch: Statement, elseBranch: Statement?)
-  // whileStmt      → "while" "(" expression ")" statement
+  /// while语句
+  ///
+  ///     whileStmt      → "while" "(" expression ")" statement
   case whileStatement(condition: Expression, body: Statement)
-  // funDecl        → "fun" IDENTIFIER "(" (IDENTIFIER ( "," IDENTIFIER )*)? ")" block
+  /// 函数定义语句
+  ///
+  ///     funDecl        → "fun" IDENTIFIER "(" (IDENTIFIER ( "," IDENTIFIER )*)? ")" block
   case functionDeclaration(name: Token, params: [Token], body: Statement)
-  // returnStmt     → "return" expression? ";"
+  /// return语句
+  ///
+  ///     returnStmt     → "return" expression? ";"
   case returnStatement(keyword: Token, value: Expression? = nil)
 }

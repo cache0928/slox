@@ -6,9 +6,12 @@
 //
 
 import Foundation
+import OrderedCollections
 
 public final class Interpreter  {
   private var environmentStack: [Environment] = [Environment()]
+  // 读取变量表达式和赋值表达式涉及的变量所在的environment距离当前environment的距离
+  private var bindings: OrderedDictionary<Expression, Int> = [:]
   
   private var globalEnvironment: Environment {
     return environmentStack.first!
@@ -32,19 +35,20 @@ public final class Interpreter  {
     var scanner = Scanner(source: code)
     var parser = Parser(tokens: try scanner.scanTokens())
     let statements = try parser.parse()
+    let resolver = Resolver()
+    bindings = try resolver.resolve(statements: statements)
     try interpret(statements: statements)
   }
   
-  func interpret(statements: [Statement]) throws {
+  private func interpret(statements: [Statement]) throws {
     for statement in statements {
-      try execute(statement: statement)
+      try visit(statement: statement)
     }
   }
-  
 }
 
-extension Interpreter: StatementExecutor {
-  func execute(statement: Statement) throws {
+extension Interpreter: StatementVisitor {
+  func visit(statement: Statement) throws {
     func executeBlock(statements: [Statement]) throws {
       let environment = Environment(enclosing: currentEnvironment)
       environmentStack.append(environment)
@@ -55,27 +59,27 @@ extension Interpreter: StatementExecutor {
     }
     switch statement {
       case .expression(let expr):
-        try evaluate(expression: expr)
+        try visit(expression: expr)
       case .print(let expr):
-        let value = try evaluate(expression: expr)
+        let value = try visit(expression: expr)
         Swift.print(value.description)
       case .variableDeclaration(let name, let initializer):
         currentEnvironment.define(variableName: name.lexeme,
-                           value: initializer == nil ? .nilValue : try evaluate(expression: initializer!))
+                           value: initializer == nil ? .nilValue : try visit(expression: initializer!))
       case .block(let statements):
         try executeBlock(statements: statements)
       case .ifStatement(let condition, let thenBranch, let elseBranch):
-        let conditionResult = try evaluate(expression: condition)
+        let conditionResult = try visit(expression: condition)
         if conditionResult.isTruthy {
-          try execute(statement: thenBranch)
+          try visit(statement: thenBranch)
         } else {
           if let elseBranch = elseBranch {
-            try execute(statement: elseBranch)
+            try visit(statement: elseBranch)
           }
         }
       case .whileStatement(let condition, let body):
-        while try evaluate(expression: condition).isTruthy {
-          try execute(statement: body)
+        while try visit(expression: condition).isTruthy {
+          try visit(statement: body)
         }
       case .functionDeclaration(let name, let params, let body):
         let closure = currentEnvironment
@@ -95,7 +99,7 @@ extension Interpreter: StatementExecutor {
             _ = environmentStack.popLast()
           }
           do {
-            try execute(statement: body)
+            try visit(statement: body)
           } catch {
             // 处理return的结果
             guard let returnValue = error as? ReturnValue else {
@@ -114,18 +118,18 @@ extension Interpreter: StatementExecutor {
         guard let expr = valueExpr else {
           throw ReturnValue.value()
         }
-        let value = try evaluate(expression: expr)
+        let value = try visit(expression: expr)
         throw ReturnValue.value(value)
     }
   }
 
 }
 
-extension Interpreter: ExpressionEvaluator {
+extension Interpreter: ExpressionVisitor {
   @discardableResult
-  func evaluate(expression: Expression) throws -> ExpressionValue {
+  func visit(expression: Expression) throws -> ExpressionValue {
     switch expression {
-      case .literal(let value):
+      case .literal(_, let value):
         guard value != nil else {
           return ExpressionValue.nilValue
         }
@@ -137,20 +141,28 @@ extension Interpreter: ExpressionEvaluator {
           return ExpressionValue.stringValue(raw: strValue)
         }
         return ExpressionValue.boolValue(raw: value as! Bool)
-      case .grouping(let expression):
-        return try evaluate(expression: expression)
-      case .unary(let op, let right):
+      case .grouping(_, let expression):
+        return try visit(expression: expression)
+      case .unary(_, let op, let right):
         return try evaluateUnary(op: op, right: right)
-      case .binary(let left, let right, let op):
+      case .binary(_, let left, let right, let op):
         return try evaluateBinary(op: op, left: left, right: right)
-      case .variable(let varName):
-        return try currentEnvironment.get(variable: varName)
-      case .assign(let varName, let valueExpression):
-        let value = try evaluate(expression: valueExpression)
-        try currentEnvironment.assign(variable: varName, value: value)
+      case .variable(_, let varName):
+        // resolver处理之后，没有distance的话默认在global中
+        guard let distance = bindings[expression] else {
+          return try globalEnvironment.get(variable: varName)
+        }
+        return try currentEnvironment.get(variable: varName, at: distance)
+      case .assign(_, let varName, let valueExpression):
+        let value = try visit(expression: valueExpression)
+        guard let distance = bindings[expression] else {
+          try globalEnvironment.assign(variable: varName, value: value)
+          return value
+        }
+        try currentEnvironment.assign(variable: varName, value: value, at: distance)
         return value
-      case .logical(let left, let op, let right):
-        let leftResult = try evaluate(expression: left)
+      case .logical(_, let left, let op, let right):
+        let leftResult = try visit(expression: left)
         switch op.type {
           case .OR:
             if leftResult.isTruthy {
@@ -161,16 +173,72 @@ extension Interpreter: ExpressionEvaluator {
               return .boolValue(raw: false)
             }
         }
-        return .boolValue(raw: try evaluate(expression: right).isTruthy)
-      case .call(let callee, let arguments, let paren):
-        guard let callable = try evaluate(expression: callee).callable else {
+        return .boolValue(raw: try visit(expression: right).isTruthy)
+      case .call(_, let callee, let arguments, let paren):
+        guard let callable = try visit(expression: callee).callable else {
           throw RuntimeError.invalidCallable(token: paren)
         }
         guard callable.arity == arguments.count else {
           throw RuntimeError.unexceptArgumentsCount(token: paren, expect: callable.arity, got: arguments.count)
         }
-        let callArgs = try arguments.map { try evaluate(expression: $0) }
+        let callArgs = try arguments.map { try visit(expression: $0) }
         return try callable.dynamicallyCall(withArguments: callArgs)
+    }
+  }
+  
+  func evaluateUnary(op: Token, right: Expression) throws -> ExpressionValue {
+    let rightValue = try visit(expression: right)
+    switch op.type {
+      case .MINUS:
+        guard let result = -rightValue else {
+          throw RuntimeError.operandError(token: op, message: "Operand must be a number.")
+        }
+        return result
+      case .BANG:
+        return !rightValue
+      default:
+        throw RuntimeError.operandError(token: op, message: "Unsupport unary operator.")
+    }
+  }
+  
+  func evaluateBinary(op: Token, left: Expression, right: Expression) throws -> ExpressionValue {
+    func evaluateOp(leftValue: ExpressionValue,
+                    rightValue: ExpressionValue,
+                    `operator`: (ExpressionValue, ExpressionValue) -> ExpressionValue?) throws -> ExpressionValue  {
+      guard let result = `operator`(leftValue, rightValue) else {
+        throw RuntimeError.operandError(
+          token: op,
+          message: op.type == .PLUS ? "Operands must be two numbers or two strings." : "Operands must be two numbers."
+        )
+      }
+      return result
+    }
+    
+    let leftValue = try visit(expression: left)
+    let rightValue = try visit(expression: right)
+    switch op.type {
+      case .PLUS:
+        return try evaluateOp(leftValue: leftValue, rightValue: rightValue, operator: +)
+      case .MINUS:
+        return try evaluateOp(leftValue: leftValue, rightValue: rightValue, operator: -)
+      case .STAR:
+        return try evaluateOp(leftValue: leftValue, rightValue: rightValue, operator: *)
+      case .SLASH:
+        return try evaluateOp(leftValue: leftValue, rightValue: rightValue, operator: /)
+      case .GREATER:
+        return try evaluateOp(leftValue: leftValue, rightValue: rightValue, operator: >)
+      case .GREATER_EQUAL:
+        return try evaluateOp(leftValue: leftValue, rightValue: rightValue, operator: >=)
+      case .LESS:
+        return try evaluateOp(leftValue: leftValue, rightValue: rightValue, operator: <)
+      case .LESS_EQUAL:
+        return try evaluateOp(leftValue: leftValue, rightValue: rightValue, operator: <=)
+      case .EQUAL_EQUAL:
+        return leftValue === rightValue
+      case .BANG_EQUAL:
+        return leftValue !== rightValue
+      default:
+        throw RuntimeError.operandError(token: op, message: "Unsupport binary operator.")
     }
   }
 }

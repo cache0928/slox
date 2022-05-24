@@ -7,15 +7,15 @@
 
 import Foundation
 
-struct Parser {
+public struct Parser {
   private let tokens: [Token]
   private var currentParseIndex = 0
   
-  init(tokens: [Token]) {
+  public init(tokens: [Token]) {
     self.tokens = tokens
   }
   
-  mutating func parse() throws -> [Statement] {
+  public mutating func parse() throws -> [Statement] {
     var statements: [Statement] = []
     while !isAtEnd {
       statements.append(try statement())
@@ -53,7 +53,7 @@ struct Parser {
     return try expressionStatement()
   }
   
-  // 变量定义语句
+  /// 变量定义语句
   private mutating func variableDeclarationStatement() throws -> Statement {
     let varName = try attemp(consume: .IDENTIFIER, else: ParseError.expectVariableName(token: currentToken))
     var initializer: Expression? = nil
@@ -64,7 +64,7 @@ struct Parser {
     return .variableDeclaration(name: varName, initializer: initializer)
   }
   
-  // function定义语句
+  /// function定义语句
   private mutating func callableDeclarationStatement(description: String) throws -> Statement {
     // 解析函数名
     let name = try attemp(consume: .IDENTIFIER,
@@ -91,7 +91,7 @@ struct Parser {
     return .functionDeclaration(name: name, params: params, body: body)
   }
   
-  // return语句
+  /// return语句
   private mutating func returnStatement() throws -> Statement {
     let keyword = previousToken!
     var expr: Expression? = nil
@@ -102,21 +102,21 @@ struct Parser {
     return .returnStatement(keyword: keyword, value: expr)
   }
   
-  // 表达式语句
+  /// 表达式语句
   private mutating func expressionStatement() throws -> Statement {
     let expression = try expression()
     try attemp(consume: .SEMICOLON, else: ParseError.expectSemicolon(token: currentToken))
     return .expression(expression)
   }
   
-  // print语句
+  /// print语句
   private mutating func printStatement() throws -> Statement {
     let expression = try expression()
     try attemp(consume: .SEMICOLON, else: ParseError.expectSemicolon(token: currentToken))
     return .print(expression: expression)
   }
   
-  // 作用域块
+  /// 作用域块
   private mutating func blockStatement() throws -> Statement {
     var statements: [Statement] = []
     while !check(type: .RIGHT_BRACE) && !isAtEnd {
@@ -126,7 +126,7 @@ struct Parser {
     return .block(statements: statements)
   }
   
-  // if块
+  /// if块
   private mutating func ifStatement() throws -> Statement {
     try attemp(consume: .LEFT_PAREN, else: ParseError.expectLeftParen(token: currentToken))
     let condition = try expression()
@@ -136,7 +136,7 @@ struct Parser {
     return .ifStatement(condition: condition, thenBranch: thenBranch, elseBranch: elseBranch)
   }
   
-  // while块
+  /// while块
   private mutating func whileStatement() throws -> Statement {
     try attemp(consume: .LEFT_PAREN, else: ParseError.expectLeftParen(token: currentToken))
     let condition = try expression()
@@ -145,9 +145,11 @@ struct Parser {
     return .whileStatement(condition: condition, body: body)
   }
   
-  // for块
-  // forStmt        → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
-  // for语句的parse不会产生单独种类的statement，而是直接通过block嵌套while来实现
+  /// for块
+  ///
+  ///     forStmt        → "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement ;
+  ///
+  /// for语句的parse不会产生单独种类的statement，而是直接通过block嵌套while来实现
   private mutating func forStatement() throws -> Statement {
     try attemp(consume: .LEFT_PAREN, else: ParseError.expectLeftParen(token: currentToken))
     var initializer: Statement? = nil
@@ -176,19 +178,20 @@ struct Parser {
   
   // MARK: - 解析表达式
   
-  // expression     → assignment
+  /// expression     → assignment
   mutating func expression() throws -> Expression {
     return try assignment()
   }
   
-  // 赋值表达式
-  // assignment     → IDENTIFIER "=" assignment | logic_or
+  /// 赋值表达式
+  ///
+  ///     assignment     → IDENTIFIER "=" assignment | logic_or
   private mutating func assignment() throws -> Expression {
     let expr = try or()
     if match(types: .EQUAL) {
       let equalToken = previousToken!
       let value = try assignment()
-      guard case let Expression.variable(varName) = expr else {
+      guard case let Expression.variable(_, varName) = expr else {
         throw ParseError.invalidAssignmentTarget(token: equalToken)
       }
       return .assign(name: varName, value: value)
@@ -196,8 +199,9 @@ struct Parser {
     return expr
   }
   
-  // 逻辑或表达式
-  // logic_or       → logic_and ( "or" logic_and )*
+  /// 逻辑或表达式
+  ///
+  ///     logic_or       → logic_and ( "or" logic_and )*
   private mutating func or() throws -> Expression {
     let left = try and()
     while match(types: .OR) {
@@ -208,8 +212,9 @@ struct Parser {
     return left
   }
   
-  // 逻辑与表达式
-  // logic_and      → equality ( "and" equality )*
+  /// 逻辑与表达式
+  ///
+  ///     logic_and      → equality ( "and" equality )*
   private mutating func and() throws -> Expression {
     let left = try equality()
     while match(types: .AND) {
@@ -220,8 +225,9 @@ struct Parser {
     return left
   }
   
-  // 等式表达式
-  // equality       → comparison ( ( "!=" | "==" ) comparison )*
+  /// 等式表达式
+  ///
+  ///     equality       → comparison ( ( "!=" | "==" ) comparison )*
   private mutating func equality() throws -> Expression {
     var expr = try comparsion()
     while match(types: .BANG_EQUAL, .EQUAL_EQUAL) {
@@ -232,8 +238,9 @@ struct Parser {
     return expr
   }
   
-  // 比较表达式
-  // comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )*
+  /// 比较表达式
+  ///
+  ///     comparison     → term ( ( ">" | ">=" | "<" | "<=" ) term )*
   private mutating func comparsion() throws -> Expression {
     var expr = try term()
     while match(types: .GREATER, .GREATER_EQUAL, .LESS, .LESS_EQUAL) {
@@ -244,8 +251,9 @@ struct Parser {
     return expr
   }
   
-  // 加减法表达式
-  // term           → factor ( ( "-" | "+" ) factor )*
+  /// 加减法表达式
+  ///
+  ///     term           → factor ( ( "-" | "+" ) factor )*
   private mutating func term() throws -> Expression {
     var expr = try factor()
     while match(types: .MINUS, .PLUS) {
@@ -256,8 +264,9 @@ struct Parser {
     return expr
   }
   
-  // 乘除法表达式
-  // factor         → unary ( ( "/" | "*" ) unary )*
+  /// 乘除法表达式
+  ///
+  ///     factor         → unary ( ( "/" | "*" ) unary )*
   private mutating func factor() throws -> Expression {
     var expr = try unary()
     while match(types: .SLASH, .STAR) {
@@ -268,8 +277,9 @@ struct Parser {
     return expr
   }
   
-  // 一元表达式
-  // unary          → ( "!" | "-" ) unary | call
+  /// 一元表达式
+  ///
+  ///     unary          → ( "!" | "-" ) unary | call
   private mutating func unary() throws -> Expression {
     if match(types: .BANG, .MINUS) {
       let op = previousToken!
@@ -279,9 +289,10 @@ struct Parser {
     return try call()
   }
   
-  // 调用表达式
-  // call           → primary ( "(" arguments? ")" )*
-  // arguments      → expression ( "," expression )* 
+  /// 调用表达式
+  ///
+  ///     call           → primary ( "(" arguments? ")" )*
+  ///     arguments      → expression ( "," expression )*
   private mutating func call() throws -> Expression {
     func finish(callee: Expression) throws -> Expression {
       var arguments: [Expression] = []
@@ -303,8 +314,9 @@ struct Parser {
     return call
   }
   
-  // 主表达式
-  // primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER
+  /// 主表达式
+  ///
+  ///     primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER
   private mutating func primary() throws -> Expression {
     if match(types: .FALSE) {
       return .literal(value: false)

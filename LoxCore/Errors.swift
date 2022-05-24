@@ -84,5 +84,21 @@ public enum RuntimeError: Error, CustomStringConvertible {
       
     }
   }
+}
 
+public enum ResolvingError: Error, CustomStringConvertible {
+  case undefinedVariable(token: Token)
+  case variableRedeclaration(token: Token)
+  case invalidReturn(token: Token, message: String)
+  
+  public var description: String {
+    switch self {
+      case .undefinedVariable(let token):
+        return "\(basicInfo(token: token)) Can't read local variable in its own initializer."
+      case .variableRedeclaration(let token):
+        return "\(basicInfo(token: token)) Already a variable with this name in this scope."
+      case .invalidReturn(let token, let message):
+        return "\(basicInfo(token: token)) \(message)"
+    }
+  }
 }

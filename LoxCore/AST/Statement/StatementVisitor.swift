@@ -7,6 +7,6 @@
 
 import Foundation
 
-protocol StatementExecutor {
-  func execute(statement: Statement) throws
+protocol StatementVisitor {
+  func visit(statement: Statement) throws
 }

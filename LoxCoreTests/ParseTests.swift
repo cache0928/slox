@@ -25,7 +25,7 @@ class ParseTests: XCTestCase {
     ]
     for token in boolTokens {
       var parser = Parser(tokens: [token, Token(type: .EOF, lexeme: "", line: 1)])
-      if case let .literal(value) = try! parser.expression() {
+      if case let .literal(_, value) = try! parser.expression() {
         XCTAssertEqual(value as! Bool, token.literal as! Bool)
       } else {
         XCTFail()
@@ -36,7 +36,7 @@ class ParseTests: XCTestCase {
       Token(type: .DOUBLE, lexeme: "123.45", line: 1, literal: 123.45),
       Token(type: .EOF, lexeme: "", line: 1)
     ])
-    if case let .literal(value) = try! parser.expression() {
+    if case let .literal(_, value) = try! parser.expression() {
       XCTAssertEqual(value as! Double, 123.45)
     } else {
       XCTFail()
@@ -45,7 +45,7 @@ class ParseTests: XCTestCase {
       Token(type: .STRING, lexeme: "test string", line: 1, literal: "test string"),
       Token(type: .EOF, lexeme: "", line: 1)
     ])
-    if case let .literal(value) = try! parser.expression() {
+    if case let .literal(_, value) = try! parser.expression() {
       XCTAssertEqual(value as! String, "test string")
     } else {
       XCTFail()
@@ -54,7 +54,7 @@ class ParseTests: XCTestCase {
       Token(type: .NIL, lexeme: "nil", line: 1),
       Token(type: .EOF, lexeme: "", line: 1)
     ])
-    if case let .literal(value) = try! parser.expression() {
+    if case let .literal(_, value) = try! parser.expression() {
       XCTAssertNil(value)
     } else {
       XCTFail()
@@ -65,10 +65,10 @@ class ParseTests: XCTestCase {
     let code = "( 1 + 2.5 )"
     var scanner = Scanner(source: code)
     var parser = Parser(tokens: try! scanner.scanTokens())
-    if case .grouping(let expression) = try! parser.expression(),
-       case .binary(let left, let right, let op) = expression,
-       case .literal(let rightValue) = right,
-       case .literal(let leftValue) = left {
+    if case .grouping(_, let expression) = try! parser.expression(),
+       case .binary(_, let left, let right, let op) = expression,
+       case .literal(_, let rightValue) = right,
+       case .literal(_, let leftValue) = left {
       XCTAssertEqual(op.type, .PLUS)
       XCTAssertEqual(leftValue as? Int, 1)
       XCTAssertEqual(rightValue as? Double, 2.5)
@@ -81,8 +81,8 @@ class ParseTests: XCTestCase {
     var code = "!true"
     var scanner = Scanner(source: code)
     var parser = Parser(tokens: try! scanner.scanTokens())
-    if case let .unary(op, right) = try! parser.expression(),
-       case let .literal(value) = right {
+    if case let .unary(_, op, right) = try! parser.expression(),
+       case let .literal(_, value) = right {
       XCTAssertEqual(op.type, .BANG)
       XCTAssertEqual(value as? Bool, true)
     } else {
@@ -91,9 +91,9 @@ class ParseTests: XCTestCase {
     code = "-(100 + 100)"
     scanner = Scanner(source: code)
     parser = Parser(tokens: try! scanner.scanTokens())
-    if case let .unary(op, right) = try! parser.expression(),
-       case let .grouping(expr) = right,
-       case let .binary(_, _, groupOp) = expr {
+    if case let .unary(_, op, right) = try! parser.expression(),
+       case let .grouping(_, expr) = right,
+       case let .binary(_, _, _, groupOp) = expr {
       XCTAssertEqual(op.type, .MINUS)
       XCTAssertEqual(groupOp.type, .PLUS)
     } else {
@@ -105,10 +105,10 @@ class ParseTests: XCTestCase {
     let code = "100 * -4.5"
     var scanner = Scanner(source: code)
     var parser = Parser(tokens: try! scanner.scanTokens())
-    if case let .binary(left, right, op) = try! parser.expression(),
-       case let .literal(leftValue) = left,
-       case let .unary(unaryOp, unaryExpr) = right,
-       case let .literal(unaryValue) = unaryExpr {
+    if case let .binary(_, left, right, op) = try! parser.expression(),
+       case let .literal(_, leftValue) = left,
+       case let .unary(_, unaryOp, unaryExpr) = right,
+       case let .literal(_, unaryValue) = unaryExpr {
       XCTAssertEqual(op.type, .STAR)
       XCTAssertEqual(leftValue as? Int, 100)
       XCTAssertEqual(unaryOp.type, .MINUS)
@@ -122,9 +122,9 @@ class ParseTests: XCTestCase {
     let code = "100 - 4.5"
     var scanner = Scanner(source: code)
     var parser = Parser(tokens: try! scanner.scanTokens())
-    if case let .binary(left, right, op) = try! parser.expression(),
-       case let .literal(leftValue) = left,
-       case let .literal(rightValue) = right {
+    if case let .binary(_, left, right, op) = try! parser.expression(),
+       case let .literal(_, leftValue) = left,
+       case let .literal(_, rightValue) = right {
       XCTAssertEqual(op.type, .MINUS)
       XCTAssertEqual(leftValue as? Int, 100)
       XCTAssertEqual(rightValue as? Double, 4.5)
@@ -137,9 +137,9 @@ class ParseTests: XCTestCase {
     let code = "100 >= 4.5"
     var scanner = Scanner(source: code)
     var parser = Parser(tokens: try! scanner.scanTokens())
-    if case let .binary(left, right, op) = try! parser.expression(),
-       case let .literal(leftValue) = left,
-        case let .literal(rightValue) = right {
+    if case let .binary(_, left, right, op) = try! parser.expression(),
+       case let .literal(_, leftValue) = left,
+        case let .literal(_, rightValue) = right {
       XCTAssertEqual(op.type, .GREATER_EQUAL)
       XCTAssertEqual(leftValue as? Int, 100)
       XCTAssertEqual(rightValue as? Double, 4.5)
@@ -152,9 +152,9 @@ class ParseTests: XCTestCase {
     let code = "100 == 4.5"
     var scanner = Scanner(source: code)
     var parser = Parser(tokens: try! scanner.scanTokens())
-    if case let .binary(left, right, op) = try! parser.expression(),
-       case let .literal(leftValue) = left,
-        case let .literal(rightValue) = right {
+    if case let .binary(_, left, right, op) = try! parser.expression(),
+       case let .literal(_, leftValue) = left,
+        case let .literal(_, rightValue) = right {
       XCTAssertEqual(op.type, .EQUAL_EQUAL)
       XCTAssertEqual(leftValue as? Int, 100)
       XCTAssertEqual(rightValue as? Double, 4.5)
@@ -167,7 +167,7 @@ class ParseTests: XCTestCase {
     let code = "a"
     var scanner = Scanner(source: code)
     var parser = Parser(tokens: try! scanner.scanTokens())
-    if case let .variable(name) = try! parser.expression() {
+    if case let .variable(_, name) = try! parser.expression() {
       XCTAssertEqual(name.type, .IDENTIFIER)
     } else {
       XCTFail()
@@ -178,8 +178,8 @@ class ParseTests: XCTestCase {
     let code = "test()"
     var scanner = Scanner(source: code)
     var parser = Parser(tokens: try! scanner.scanTokens())
-    if case let .call(callee, arguments, _) = try! parser.expression(),
-       case let .variable(name) = callee {
+    if case let .call(_, callee, arguments, _) = try! parser.expression(),
+       case let .variable(_, name) = callee {
       XCTAssertEqual(name.type, .IDENTIFIER)
       XCTAssertTrue(arguments.isEmpty)
     } else {
