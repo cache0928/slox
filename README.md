@@ -42,7 +42,7 @@
   - [ ] Challenge 2: Add anonymous function (lambdas) syntax.
   
 - [x] 11. [**Resolving and Binding**](http://www.craftinginterpreters.com/resolving-and-binding.html)
-  - [ ] Challenge 3: Extend the resolver to report an error if a local variable is never used.
+  - [x] Challenge 3: Extend the resolver to report an error if a local variable is never used.
   - [ ] Challenge 4: Store local variables in an array and look them up by index.
   
 - [ ] 12. [**Classes**](http://www.craftinginterpreters.com/classes.html)

@@ -9,18 +9,47 @@ import Foundation
 import OrderedCollections
 
 fileprivate class Scope {
-  private var inner: [String: Bool] = [:]
-  subscript(key: String) -> Bool? {
+  struct Description {
+    let token: Token
+    var isDefined: Bool = false
+    var hasBeenUsed: Bool = false
+  }
+  
+  subscript(key: String) -> Description? {
     get {
       return inner[key]
     }
-    set {
-      inner[key] = newValue
+  }
+  
+  deinit {
+    let unused = self.unusedVariable
+    for description in unused {
+      print(ResolvingError.warning(token: description.token, message: "Initialization of immutable value '\(description.token.lexeme)' was never used;"))
     }
+  }
+  
+  private var inner: OrderedDictionary<String, Description> = [:]
+
+  func declare(variable name: Token) {
+    inner[name.lexeme] = Description(
+      token: name
+    )
+  }
+  
+  func define(variable name: String) {
+    inner[name]?.isDefined = true
+  }
+  
+  func use(variable name: String) {
+    inner[name]?.hasBeenUsed = true
   }
   
   func contains(key: String) -> Bool {
     return inner.keys.contains(key)
+  }
+  
+  private var unusedVariable: [Description] {
+    return inner.values.filter { !$0.hasBeenUsed }
   }
 }
 
@@ -56,6 +85,7 @@ extension Resolver: ExpressionVisitor {
           continue
         }
         bindings[expression] = index
+        scope.use(variable: localVariableName.lexeme)
         return
       }
       /// 如果穷尽scopes也没找到同名变量，则默认其是程序全局变量，不设置distance
@@ -63,8 +93,8 @@ extension Resolver: ExpressionVisitor {
     }
     switch expression {
       case .variable(_, let name):
-        // 不支持类似于var a = a;这样的操作
-        guard scopes.isEmpty || scopes.last?[name.lexeme] != false else {
+        // 非global下不支持类似于var a = a;这样的操作
+        guard scopes.isEmpty || scopes.last?[name.lexeme]?.isDefined != false else {
           throw ResolvingError.undefinedVariable(token: name)
         }
         resolve(expression: expression, localVariableName: name)
@@ -103,26 +133,29 @@ extension Resolver: StatementVisitor {
         for statement in statements {
           try visit(statement: statement)
         }
+        
       case .variableDeclaration(let name, let initializer):
         guard scopes.last?.contains(key: name.lexeme) != true else {
           throw ResolvingError.variableRedeclaration(token: name)
         }
-        scopes.last?[name.lexeme] = false
+        scopes.last?.declare(variable: name)
         if let expr = initializer {
           try visit(expression: expr)
         }
-        scopes.last?[name.lexeme] = true
+        scopes.last?.define(variable: name.lexeme)
       case .functionDeclaration(let name, let params, let body):
-        scopes.last?[name.lexeme] = true
+        scopes.last?.declare(variable: name)
+        scopes.last?.define(variable: name.lexeme)
         scopes.append(Scope())
         let from = currentFunction
         currentFunction = .function
         defer {
-          _ = scopes.popLast()
           currentFunction = from
+          _ = scopes.popLast()
         }
         for param in params {
-          scopes.last?[param.lexeme] = true
+          scopes.last?.declare(variable: param)
+          scopes.last?.define(variable: param.lexeme)
         }
         try visit(statement: body)
       case .expression(let expr):

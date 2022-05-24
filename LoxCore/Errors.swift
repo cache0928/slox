@@ -90,6 +90,7 @@ public enum ResolvingError: Error, CustomStringConvertible {
   case undefinedVariable(token: Token)
   case variableRedeclaration(token: Token)
   case invalidReturn(token: Token, message: String)
+  case warning(token: Token, message: String)
   
   public var description: String {
     switch self {
@@ -99,6 +100,8 @@ public enum ResolvingError: Error, CustomStringConvertible {
         return "\(basicInfo(token: token)) Already a variable with this name in this scope."
       case .invalidReturn(let token, let message):
         return "\(basicInfo(token: token)) \(message)"
+      case .warning(let token, let message):
+        return "[line \(token.line)] Warning \(token.type == .EOF ? "at end" : "at '\(token.lexeme)'"): \(message)"
     }
   }
 }
