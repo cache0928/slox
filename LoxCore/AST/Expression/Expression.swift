@@ -15,6 +15,8 @@ public indirect enum Expression {
   case assign(key: UUID = UUID(), name: Token, value: Expression)
   case logical(key: UUID = UUID(), left: Expression, op: Token, right: Expression)
   case call(key: UUID = UUID(), callee: Expression, arguments: [Expression], rightParen: Token)
+  case getter(key: UUID = UUID(), object: Expression, propertyName: Token)
+  case setter(key: UUID = UUID(), object: Expression, propertyName: Token, value: Expression)
 }
 
 extension Expression: CustomStringConvertible {
@@ -36,31 +38,33 @@ extension Expression: CustomStringConvertible {
         return "(\(op.lexeme) \(left.description) \(right.description))"
       case .call(_, let callee, let arguments, _):
         return "(call \(callee.description) with [\(arguments.map {$0.description}.joined(separator: ", "))])"
+      case .getter(_, let object, let propertyName):
+        return "(get \(object).\(propertyName.lexeme))"
+      case .setter(_, let object, let propertyName, let value):
+        return "(set \(object).\(propertyName.lexeme) = \(value))"
     }
   }
 }
 
 extension Expression: Hashable {
-  public static func == (lhs: Expression, rhs: Expression) -> Bool {
-    switch (lhs, rhs) {
-      case (.binary(let leftKey, _, _, _), .binary(let rightKey, _, _, _)):
-        return leftKey == rightKey
-      case (.grouping(let leftKey, _), .grouping(let rightKey, _)):
-        return leftKey == rightKey
-      case (.literal(let leftKey, _), .literal(let rightKey, _)):
-        return leftKey == rightKey
-      case (.unary(let leftKey, _, _), .unary(let rightKey, _, _)):
-        return leftKey == rightKey
-      case (.variable(let leftKey, _), .variable(let rightKey, _)):
-        return leftKey == rightKey
-      case (.assign(let leftKey, _, _), .assign(let rightKey, _, _)):
-        return leftKey == rightKey
-      case (.logical(let leftKey, _, _, _), .logical(let rightKey, _, _, _)):
-        return leftKey == rightKey
-      case (.call(let leftKey, _, _, _), .call(let rightKey, _, _, _)):
-        return leftKey == rightKey
-      default: return false
+  private var key: UUID {
+    switch self {
+      case .binary(let key, _, _, _),
+       .grouping(let key, _),
+       .literal(let key, _),
+       .unary(let key, _, _),
+       .variable(let key, _),
+       .assign(let key, _, _),
+       .logical(let key, _, _, _),
+       .call(let key, _, _, _),
+       .getter(let key, _, _),
+       .setter(let key, _, _, _):
+        return key
     }
+  }
+  
+  public static func == (lhs: Expression, rhs: Expression) -> Bool {
+    return lhs.key == rhs.key
   }
   
   public func hash(into hasher: inout Hasher) {
@@ -80,6 +84,10 @@ extension Expression: Hashable {
       case .logical(let key, _, _, _):
         hasher.combine(key)
       case .call(let key, _, _, _):
+        hasher.combine(key)
+      case .getter(let key, _, _):
+        hasher.combine(key)
+      case .setter(let key, _, _, _):
         hasher.combine(key)
     }
   }

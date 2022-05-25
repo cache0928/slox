@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import AppKit
 
 public struct Parser {
   private let tokens: [Token]
@@ -49,6 +50,9 @@ public struct Parser {
     }
     if match(types: .RETURN) {
       return try returnStatement()
+    }
+    if match(types: .CLASS) {
+      return try classStatement()
     }
     return try expressionStatement()
   }
@@ -100,6 +104,18 @@ public struct Parser {
     }
     try attemp(consume: .SEMICOLON, else: ParseError.expectSemicolon(token: currentToken, message: "Expect ';' after return value."))
     return .returnStatement(keyword: keyword, value: expr)
+  }
+  
+  /// class定义
+  private mutating func classStatement() throws -> Statement {
+    let name = try attemp(consume: .IDENTIFIER, else: ParseError.expectClassName(token: currentToken))
+    try attemp(consume: .LEFT_BRACE, else: ParseError.expectLeftBrace(token: currentToken, message: "Expect '{' before class body."))
+    var methods: [Statement] = []
+    while !isAtEnd && !check(type: .RIGHT_BRACE) {
+      methods.append(try callableDeclarationStatement(description: "method"))
+    }
+    try attemp(consume: .RIGHT_BRACE, else: ParseError.expectRightBrace(token: currentToken, message: "Expect '}' after class body."))
+    return .classStatement(name: name, methods: methods)
   }
   
   /// 表达式语句
@@ -185,16 +201,18 @@ public struct Parser {
   
   /// 赋值表达式
   ///
-  ///     assignment     → IDENTIFIER "=" assignment | logic_or
+  ///     assignment     → ( call "." )? IDENTIFIER "=" assignment | logic_or
   private mutating func assignment() throws -> Expression {
     let expr = try or()
     if match(types: .EQUAL) {
       let equalToken = previousToken!
       let value = try assignment()
-      guard case let Expression.variable(_, varName) = expr else {
-        throw ParseError.invalidAssignmentTarget(token: equalToken)
+      if case let Expression.variable(_, varName) = expr {
+        return .assign(name: varName, value: value)
+      } else if case let Expression.getter(_, object, propertyName) = expr {
+        return .setter(object: object, propertyName: propertyName, value: value)
       }
-      return .assign(name: varName, value: value)
+      throw ParseError.invalidAssignmentTarget(token: equalToken)
     }
     return expr
   }
@@ -291,7 +309,7 @@ public struct Parser {
   
   /// 调用表达式
   ///
-  ///     call           → primary ( "(" arguments? ")" )*
+  ///     call           → primary ( "(" arguments? ")" | "." IDENTIFIER )*
   ///     arguments      → expression ( "," expression )*
   private mutating func call() throws -> Expression {
     func finish(callee: Expression) throws -> Expression {
@@ -307,11 +325,18 @@ public struct Parser {
       try attemp(consume: .RIGHT_PAREN, else: ParseError.expectRightParen(token: currentToken))
       return .call(callee: callee, arguments: arguments, rightParen: previousToken!)
     }
-    var call = try primary()
-    while match(types: .LEFT_PAREN) {
-      call = try finish(callee: call)
+    var expr = try primary()
+    while check(type: .LEFT_PAREN) || check(type: .DOT) {
+      if match(types: .LEFT_PAREN) {
+        // 函数调用()
+        expr = try finish(callee: expr)
+      } else if match(types: .DOT) {
+        // 读取实例属性.
+        let propertyName = try attemp(consume: .IDENTIFIER, else: ParseError.expectPropertyName(token: currentToken))
+        expr = .getter(object: expr, propertyName: propertyName)
+      }
     }
-    return call
+    return expr
   }
   
   /// 主表达式

@@ -36,12 +36,12 @@ fileprivate class Scope {
     )
   }
   
-  func define(variable name: String) {
-    inner[name]?.isDefined = true
+  func define(variable name: Token) {
+    inner[name.lexeme]?.isDefined = true
   }
   
-  func use(variable name: String) {
-    inner[name]?.hasBeenUsed = true
+  func use(variable name: Token) {
+    inner[name.lexeme]?.hasBeenUsed = true
   }
   
   func contains(key: String) -> Bool {
@@ -85,7 +85,7 @@ extension Resolver: ExpressionVisitor {
           continue
         }
         bindings[expression] = index
-        scope.use(variable: localVariableName.lexeme)
+        scope.use(variable: localVariableName)
         return
       }
       /// 如果穷尽scopes也没找到同名变量，则默认其是程序全局变量，不设置distance
@@ -118,6 +118,11 @@ extension Resolver: ExpressionVisitor {
         try visit(expression: right)
       case .unary(_, _, let right):
         try visit(expression: right)
+      case .getter(_, let object, _):
+        try visit(expression: object)
+      case .setter(_, let object, _, let value):
+        try visit(expression: value)
+        try visit(expression: object)
     }
   }
 }
@@ -142,10 +147,10 @@ extension Resolver: StatementVisitor {
         if let expr = initializer {
           try visit(expression: expr)
         }
-        scopes.last?.define(variable: name.lexeme)
+        scopes.last?.define(variable: name)
       case .functionDeclaration(let name, let params, let body):
         scopes.last?.declare(variable: name)
-        scopes.last?.define(variable: name.lexeme)
+        scopes.last?.define(variable: name)
         scopes.append(Scope())
         let from = currentFunction
         currentFunction = .function
@@ -155,7 +160,7 @@ extension Resolver: StatementVisitor {
         }
         for param in params {
           scopes.last?.declare(variable: param)
-          scopes.last?.define(variable: param.lexeme)
+          scopes.last?.define(variable: param)
         }
         try visit(statement: body)
       case .expression(let expr):
@@ -180,6 +185,9 @@ extension Resolver: StatementVisitor {
       case .whileStatement(let condition, let body):
         try visit(expression: condition)
         try visit(statement: body)
+      case .classStatement(let name, _):
+        scopes.last?.declare(variable: name)
+        scopes.last?.define(variable: name)
     }
   }
 }

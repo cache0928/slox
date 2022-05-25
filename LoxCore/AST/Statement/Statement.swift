@@ -44,4 +44,8 @@ public indirect enum Statement {
   ///
   ///     returnStmt     → "return" expression? ";"
   case returnStatement(keyword: Token, value: Expression? = nil)
+  /// class定义语句
+  ///
+  ///     classDecl      → "class" IDENTIFIER "{" function* "}"
+  case classStatement(name: Token, methods: [Statement])
 }

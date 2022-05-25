@@ -375,5 +375,44 @@ class InterpreterTests: XCTestCase {
     XCTAssertEqual(try! interpreter.visit(expression: .variable(name: varA)), ExpressionValue.intValue(raw: 1))
     XCTAssertEqual(try! interpreter.visit(expression: .variable(name: varB)), ExpressionValue.intValue(raw: 2))
   }
+  
+  func testCreatClassInstance() {
+    let code = """
+               class A {
+                 method() {}
+               }
+
+               var instance = A();
+               """
+    try! interpreter.interpret(code: code)
+    let instanceToken = Token(type: .IDENTIFIER, lexeme: "instance", line: 1)
+    let instance = try! interpreter.visit(expression: .variable(name: instanceToken))
+    XCTAssertEqual(instance.description, "{instance A}")
+  }
+  
+  func testGetUndefinedInstanceProperty() {
+    let code = """
+               class A {
+                 method() {}
+               }
+
+               var prop = A().prop;
+               """
+    XCTAssertThrowsError(try interpreter.interpret(code: code))
+  }
+  
+  func testSetAndGetInstanceProperty() {
+    let code = """
+               class A {
+                 method() {}
+               }
+               var a = A();
+               a.prop = 1;
+               var prop = a.prop;
+               """
+    try! interpreter.interpret(code: code)
+    let prop = Token(type: .IDENTIFIER, lexeme: "prop", line: 1)
+    XCTAssertEqual(try! interpreter.visit(expression: .variable(name: prop)), ExpressionValue.intValue(raw: 1))
+  }
 
 }

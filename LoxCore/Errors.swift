@@ -38,6 +38,8 @@ public enum ParseError: Error, CustomStringConvertible {
   case expectLeftBrace(token: Token, message: String? = nil)
   case expectRightBrace(token: Token, message: String? = nil)
   case tooManyArguments(token: Token, message: String? = nil)
+  case expectClassName(token: Token)
+  case expectPropertyName(token: Token)
   
   public var description: String {
     switch self {
@@ -59,6 +61,10 @@ public enum ParseError: Error, CustomStringConvertible {
         return "\(basicInfo(token: token)) \(message ?? "Expect '}' after expression.")"
       case .tooManyArguments(let token, let message):
         return "\(basicInfo(token: token)) \(message ?? "Can't have more than 255 arguments.")"
+      case .expectClassName(let token):
+        return "\(basicInfo(token: token)) Expect class name."
+      case .expectPropertyName(let token):
+        return "\(basicInfo(token: token)) Expect property name after '.'."
     }
   }
 }
@@ -69,11 +75,12 @@ public enum RuntimeError: Error, CustomStringConvertible {
   case undefinedVariable(token: Token)
   case invalidCallable(token: Token)
   case unexceptArgumentsCount(token: Token, expect: Int, got: Int)
+  case undefinedProperty(token: Token)
   
   public var description: String {
     switch self {
       case .operandError(let token, let message),
-          .unknownError(let token, let message):
+           .unknownError(let token, let message):
         return "[line \(token.line)] Runtime Error at '\(token.lexeme)': \(message)"
       case .undefinedVariable(let token):
         return "\(basicInfo(token: token)) Undefined variable '\(token.lexeme)'."
@@ -81,7 +88,8 @@ public enum RuntimeError: Error, CustomStringConvertible {
         return "\(basicInfo(token: token)) Can only call functions and classes."
       case .unexceptArgumentsCount(let token, let expect, let got):
         return "\(basicInfo(token: token)) Expected \(expect) arguments but got \(got)."
-      
+      case .undefinedProperty(let token):
+        return "\(basicInfo(token: token)) Undefined property '\(token.lexeme)'."
     }
   }
 }

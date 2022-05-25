@@ -120,6 +120,9 @@ extension Interpreter: StatementVisitor {
         }
         let value = try visit(expression: expr)
         throw ReturnValue.value(value)
+      case .classStatement(let name, let methods):
+        let loxClass = Class(name: name.lexeme)
+        currentEnvironment.define(variableName: name.lexeme, value: .anyValue(raw: loxClass))
     }
   }
 
@@ -183,6 +186,25 @@ extension Interpreter: ExpressionVisitor {
         }
         let callArgs = try arguments.map { try visit(expression: $0) }
         return try callable.dynamicallyCall(withArguments: callArgs)
+      case .getter(_, let object, let propertyName):
+        let value = try visit(expression: object)
+        guard case let .anyValue(raw) = value,
+              let instance = raw as? Instance else {
+          throw RuntimeError.operandError(token: propertyName, message: "Only instances have properties.")
+        }
+        guard let property = instance[dynamicMember: propertyName.lexeme] else {
+          throw RuntimeError.undefinedProperty(token: propertyName)
+        }
+        return property
+      case .setter(_, let object, let propertyName, let value):
+        let object = try visit(expression: object)
+        guard case let .anyValue(raw) = object,
+              let instance = raw as? Instance else {
+          throw RuntimeError.operandError(token: propertyName, message: "Only instances have properties.")
+        }
+        let value = try visit(expression: value)
+        instance[dynamicMember: propertyName.lexeme] = value
+        return value
     }
   }
   

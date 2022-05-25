@@ -211,6 +211,34 @@ class ParseTests: XCTestCase {
     }
   }
   
+  func testParseClassDeclaration() {
+    let code = "class A { method() {} }"
+    var scanner = Scanner(source: code)
+    var parser = Parser(tokens: try! scanner.scanTokens())
+    if case let .classStatement(name, methods) = try! parser.statement() {
+      XCTAssertEqual(name.type, .IDENTIFIER)
+      XCTAssertTrue(methods.count == 1)
+    } else {
+      XCTFail()
+    }
+  }
+  
+  func testParseGetInstanceProperty() {
+    let code = "instance.property;"
+    var scanner = Scanner(source: code)
+    var parser = Parser(tokens: try! scanner.scanTokens())
+    if case let .expression(expr) = try! parser.statement(),
+       case let .getter(_, object, propertyName) = expr,
+       case let .variable(_, objName) = object {
+      XCTAssertEqual(objName.type, .IDENTIFIER)
+      XCTAssertEqual(objName.lexeme, "instance")
+      XCTAssertEqual(propertyName.type, .IDENTIFIER)
+      XCTAssertEqual(propertyName.lexeme, "property")
+    } else {
+      XCTFail()
+    }
+  }
+  
   func testExceptRightParen() {
     let code = "( 1 + 2"
     var scanner = Scanner(source: code)
