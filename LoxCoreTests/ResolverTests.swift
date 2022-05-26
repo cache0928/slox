@@ -18,11 +18,20 @@ class ResolverTests: XCTestCase {
   }
   
   func testInvalidReturn() {
-    let code = """
+    var code = """
                var a = 1;
                return;
                """
-    let statements = statements(from: code)
+    var statements = statements(from: code)
+    XCTAssertThrowsError(try resolver.resolve(statements: statements))
+    code = """
+           class A {
+             init() {
+               return;
+             }
+           }
+           """
+    statements = self.statements(from: code)
     XCTAssertThrowsError(try resolver.resolve(statements: statements))
   }
   

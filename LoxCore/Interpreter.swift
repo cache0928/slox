@@ -126,12 +126,18 @@ extension Interpreter: StatementVisitor {
         throw ReturnValue.value(value)
       case .classStatement(let name, let methods):
         var methodMap: [String: Function] = [:]
+        var initializer: Function? = nil
         for member in methods {
           if case let .functionDeclaration(name, params, body) = member {
-            methodMap[name.lexeme] = declareFunction(name: name, params: params, body: body)
+            let function = declareFunction(name: name, params: params, body: body)
+            if name.lexeme == "init" {
+              initializer = function
+            } else {
+              methodMap[name.lexeme] = function
+            }
           }
         }
-        let loxClass = Class(name: name.lexeme, methods: methodMap)
+        let loxClass = Class(name: name.lexeme, methods: methodMap, initializer: initializer)
         currentEnvironment.define(variableName: name.lexeme, value: .anyValue(raw: loxClass))
     }
   }

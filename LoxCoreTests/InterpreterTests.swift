@@ -440,5 +440,24 @@ class InterpreterTests: XCTestCase {
     let prop = Token(type: .IDENTIFIER, lexeme: "result", line: 1)
     XCTAssertEqual(try! interpreter.visit(expression: .variable(name: prop)), ExpressionValue.stringValue(raw: "my name"))
   }
+  
+  func testClassInitializer() {
+    let code = """
+               class Person {
+                 init(name, age) {
+                   this.name = name;
+                   this.age = age;
+                 }
+               }
+               var linda = Person("linda", 20);
+               var age = linda.age;
+               var name = linda.name;
+               """
+    try! interpreter.interpret(code: code)
+    let name = Token(type: .IDENTIFIER, lexeme: "name", line: 1)
+    let age = Token(type: .IDENTIFIER, lexeme: "age", line: 1)
+    XCTAssertEqual(try! interpreter.visit(expression: .variable(name: name)), ExpressionValue.stringValue(raw: "linda"))
+    XCTAssertEqual(try! interpreter.visit(expression: .variable(name: age)), ExpressionValue.intValue(raw: 20))
+  }
 
 }

@@ -9,11 +9,13 @@ import Foundation
 
 class Class {
   let name: String
-  var methods: [String: Function]
+  let methods: [String: Function]
+  let initializer: Function?
   
-  init(name: String, methods: [String: Function]) {
+  init(name: String, methods: [String: Function], initializer: Function? = nil) {
     self.name = name
     self.methods = methods
+    self.initializer = initializer
   }
 }
 
@@ -26,10 +28,12 @@ extension Class: CustomStringConvertible {
 // class的构造器实现
 extension Class: Callable {
   var arity: Int {
-    return 0
+    return initializer?.arity ?? 0
   }
   
   func dynamicallyCall(withArguments args: [ExpressionValue]) throws -> ExpressionValue {
-    return .anyValue(raw: Instance(class: self))
+    let instance = Instance(class: self)
+    try initializer?.bind(variable: "this", value: .anyValue(raw: instance)).dynamicallyCall(withArguments: args)
+    return .anyValue(raw: instance)
   }
 }

@@ -21,13 +21,7 @@ class Instance {
       if let filed = fileds[member] {
         return filed
       } else if let method = isa.methods[member] {
-        let thisEnv = Environment(enclosing: method.closure)
-        thisEnv.define(variableName: "this", value: .anyValue(raw: self))
-        let methodWithThis = Function(name: method.name,
-                                      paramNames: method.paramNames,
-                                      closure: thisEnv,
-                                      call: method.underly)
-        return .anyValue(raw: methodWithThis)
+        return .anyValue(raw: method.bind(variable: "this", value: .anyValue(raw: self)))
       } else {
         return nil
       }

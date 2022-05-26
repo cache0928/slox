@@ -12,7 +12,7 @@ struct Function: Callable {
   let paramNames: [String]
   // 函数定义时候捕获的闭包环境
   let closure: Environment
-  let underly: ([ExpressionValue], Environment) throws -> ExpressionValue
+  private let underly: ([ExpressionValue], Environment) throws -> ExpressionValue
 
   init(name: String,
        paramNames: [String],
@@ -28,7 +28,19 @@ struct Function: Callable {
     return paramNames.count
   }
   
+  @discardableResult
   func dynamicallyCall(withArguments args: [ExpressionValue]) throws -> ExpressionValue {
     return try underly(args, closure)
+  }
+}
+
+extension Function {
+  func bind(variable name: String, value: ExpressionValue) -> Function {
+    let newEnv = Environment(enclosing: closure)
+    newEnv.define(variableName: name, value: value)
+    return Function(name: name,
+                    paramNames: paramNames,
+                    closure: newEnv,
+                    call: underly)
   }
 }

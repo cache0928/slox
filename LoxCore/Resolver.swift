@@ -61,6 +61,7 @@ public final class Resolver {
   enum FunctionType {
     case function
     case method
+    case initializer
     case none
   }
   
@@ -125,7 +126,7 @@ extension Resolver: ExpressionVisitor {
         try visit(expression: value)
         try visit(expression: object)
       case .this(_, let keyword):
-        guard currentFunction == .method else {
+        guard currentFunction == .method || currentFunction == .initializer else {
           throw ResolvingError.invalidThis(token: keyword, message: "Can't use 'this' outside of a class.")
         }
         resolve(expression: expression, localVariableName: keyword)
@@ -180,6 +181,10 @@ extension Resolver: StatementVisitor {
       case .print(let expr):
         try visit(expression: expr)
       case .returnStatement(let keyword, let value):
+        // 构造器中不能return
+        guard currentFunction != .initializer else {
+          throw ResolvingError.invalidReturn(token: keyword, message: "Can't return from an initializer.")
+        }
         // 不能在非funciton或者method的环境下return
         guard currentFunction == .function || currentFunction == .method else {
           throw ResolvingError.invalidReturn(token: keyword, message: "Can't return from top-level code.")
@@ -202,7 +207,9 @@ extension Resolver: StatementVisitor {
           _ = scopes.popLast()
         }
         for method in methods {
-          currentFunction = .method
+          if case let .functionDeclaration(name, _, _) = method {
+            currentFunction = name.lexeme == "init" ? .initializer : .method
+          }
           try visit(statement: method)
         }
     }
