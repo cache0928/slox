@@ -81,7 +81,7 @@ public enum RuntimeError: Error, CustomStringConvertible {
     switch self {
       case .operandError(let token, let message),
            .unknownError(let token, let message):
-        return "[line \(token.line)] Runtime Error at '\(token.lexeme)': \(message)"
+        return "[line \(token.line)] RuntimeError at '\(token.lexeme)': \(message)"
       case .undefinedVariable(let token):
         return "\(basicInfo(token: token)) Undefined variable '\(token.lexeme)'."
       case .invalidCallable(let token):

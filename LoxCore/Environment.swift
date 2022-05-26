@@ -7,9 +7,13 @@
 
 import Foundation
 
-final class Environment {
+final class Environment: CustomStringConvertible {
   private var values: [String: ExpressionValue] = [:]
   private let enclosing: Environment?
+  
+  var description: String {
+    return "\(values)"
+  }
   
   init(enclosing: Environment? = nil) {
     self.enclosing = enclosing

@@ -9,16 +9,28 @@ import Foundation
 
 @dynamicMemberLookup
 class Instance {
-  let `class`: Class
+  let isa: Class
   var fileds: [String: ExpressionValue] = [:]
   
   init(`class`: Class) {
-    self.class = `class`
+    self.isa = `class`
   }
   
   subscript(dynamicMember member: String) -> ExpressionValue? {
     get {
-      return fileds[member]
+      if let filed = fileds[member] {
+        return filed
+      } else if let method = isa.methods[member] {
+        let thisEnv = Environment(enclosing: method.closure)
+        thisEnv.define(variableName: "this", value: .anyValue(raw: self))
+        let methodWithThis = Function(name: method.name,
+                                      paramNames: method.paramNames,
+                                      closure: thisEnv,
+                                      call: method.underly)
+        return .anyValue(raw: methodWithThis)
+      } else {
+        return nil
+      }
     }
     set {
       fileds[member] = newValue
@@ -28,6 +40,6 @@ class Instance {
 
 extension Instance: CustomStringConvertible {
   var description: String {
-    return "{instance \(`class`.name)}"
+    return "{instance \(isa.name)}"
   }
 }

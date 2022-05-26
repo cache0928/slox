@@ -57,6 +57,39 @@ extension Interpreter: StatementVisitor {
       }
       try interpret(statements: statements)
     }
+    
+    func declareFunction(name: Token, params: [Token], body: Statement) -> Function {
+      return Function(name: name.lexeme,
+                      paramNames: params.map {$0.lexeme},
+                      closure: currentEnvironment) {
+        [unowned self] args, environment in
+        // 复原function定义时候的环境栈，这样可以使local functions能访问捕获到的定义时候的变量，否则这些变量会随着定义时候environment的pop而消失
+        // 将function的环境插入到当前的环境栈中，由此可以从函数的形参名获取实参值
+        let callStack = Environment(enclosing: environment)
+        environmentStack.append(callStack)
+        // 给形参赋值
+        for paramEntry in zip(params, args) {
+          callStack.define(variableName: paramEntry.0.lexeme, value: paramEntry.1)
+        }
+        defer {
+          _ = environmentStack.popLast()
+        }
+        do {
+          try visit(statement: body)
+        } catch {
+          // 处理return的结果
+          guard let returnValue = error as? ReturnValue else {
+            throw error
+          }
+          switch returnValue {
+            case .value(let value):
+              return value
+          }
+        }
+        return ExpressionValue.anyValue(raw: ())
+      }
+    }
+    
     switch statement {
       case .expression(let expr):
         try visit(expression: expr)
@@ -65,7 +98,7 @@ extension Interpreter: StatementVisitor {
         Swift.print(value.description)
       case .variableDeclaration(let name, let initializer):
         currentEnvironment.define(variableName: name.lexeme,
-                           value: initializer == nil ? .nilValue : try visit(expression: initializer!))
+                                  value: initializer == nil ? .nilValue : try visit(expression: initializer!))
       case .block(let statements):
         try executeBlock(statements: statements)
       case .ifStatement(let condition, let thenBranch, let elseBranch):
@@ -82,36 +115,7 @@ extension Interpreter: StatementVisitor {
           try visit(statement: body)
         }
       case .functionDeclaration(let name, let params, let body):
-        let closure = currentEnvironment
-        let function = Function(name: name.lexeme,
-                                paramNames: params.map { $0.lexeme },
-                                closure: closure) {
-          [unowned self] args in
-          // 复原function定义时候的环境栈，这样可以使local functions能访问捕获到的定义时候的变量，否则这些变量会随着定义时候environment的pop而消失
-          // 将function的环境插入到当前的环境栈中，由此可以从函数的形参名获取实参值
-          let callStack = Environment(enclosing: closure)
-          environmentStack.append(callStack)
-          // 给形参赋值
-          for paramEntry in zip(params, args) {
-            callStack.define(variableName: paramEntry.0.lexeme, value: paramEntry.1)
-          }
-          defer {
-            _ = environmentStack.popLast()
-          }
-          do {
-            try visit(statement: body)
-          } catch {
-            // 处理return的结果
-            guard let returnValue = error as? ReturnValue else {
-              throw error
-            }
-            switch returnValue {
-              case .value(let value):
-                return value
-            }
-          }
-          return ExpressionValue.anyValue(raw: ())
-        }
+        let function = declareFunction(name: name, params: params, body: body)
         currentEnvironment.define(variableName: name.lexeme, value: .anyValue(raw: function))
       case .returnStatement(_, let valueExpr):
         // 这里将lox的return值直接通过异常抛出，然后在try执行block的地方直接catch就等于直接跳出多重调用栈取到返回值
@@ -121,11 +125,17 @@ extension Interpreter: StatementVisitor {
         let value = try visit(expression: expr)
         throw ReturnValue.value(value)
       case .classStatement(let name, let methods):
-        let loxClass = Class(name: name.lexeme)
+        var methodMap: [String: Function] = [:]
+        for member in methods {
+          if case let .functionDeclaration(name, params, body) = member {
+            methodMap[name.lexeme] = declareFunction(name: name, params: params, body: body)
+          }
+        }
+        let loxClass = Class(name: name.lexeme, methods: methodMap)
         currentEnvironment.define(variableName: name.lexeme, value: .anyValue(raw: loxClass))
     }
   }
-
+  
 }
 
 extension Interpreter: ExpressionVisitor {
@@ -150,7 +160,7 @@ extension Interpreter: ExpressionVisitor {
         return try evaluateUnary(op: op, right: right)
       case .binary(_, let left, let right, let op):
         return try evaluateBinary(op: op, left: left, right: right)
-      case .variable(_, let varName):
+      case .variable(_, let varName), .this(_, let varName):
         // resolver处理之后，没有distance的话默认在global中
         guard let distance = bindings[expression] else {
           return try globalEnvironment.get(variable: varName)
@@ -205,6 +215,7 @@ extension Interpreter: ExpressionVisitor {
         let value = try visit(expression: value)
         instance[dynamicMember: propertyName.lexeme] = value
         return value
+        
     }
   }
   

@@ -17,6 +17,7 @@ public indirect enum Expression {
   case call(key: UUID = UUID(), callee: Expression, arguments: [Expression], rightParen: Token)
   case getter(key: UUID = UUID(), object: Expression, propertyName: Token)
   case setter(key: UUID = UUID(), object: Expression, propertyName: Token, value: Expression)
+  case this(key: UUID = UUID(), keyword: Token)
 }
 
 extension Expression: CustomStringConvertible {
@@ -42,6 +43,9 @@ extension Expression: CustomStringConvertible {
         return "(get \(object).\(propertyName.lexeme))"
       case .setter(_, let object, let propertyName, let value):
         return "(set \(object).\(propertyName.lexeme) = \(value))"
+      case .this(_, _):
+        return "(this)"
+        
     }
   }
 }
@@ -58,7 +62,8 @@ extension Expression: Hashable {
        .logical(let key, _, _, _),
        .call(let key, _, _, _),
        .getter(let key, _, _),
-       .setter(let key, _, _, _):
+       .setter(let key, _, _, _),
+       .this(let key, _):
         return key
     }
   }
@@ -68,27 +73,6 @@ extension Expression: Hashable {
   }
   
   public func hash(into hasher: inout Hasher) {
-    switch self {
-      case .binary(let key, _, _, _):
-        hasher.combine(key)
-      case .grouping(let key, _):
-        hasher.combine(key)
-      case .literal(let key, _):
-        hasher.combine(key)
-      case .unary(let key, _, _):
-        hasher.combine(key)
-      case .variable(let key, _):
-        hasher.combine(key)
-      case .assign(let key, _, _):
-        hasher.combine(key)
-      case .logical(let key, _, _, _):
-        hasher.combine(key)
-      case .call(let key, _, _, _):
-        hasher.combine(key)
-      case .getter(let key, _, _):
-        hasher.combine(key)
-      case .setter(let key, _, _, _):
-        hasher.combine(key)
-    }
+    hasher.combine(key)
   }
 }

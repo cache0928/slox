@@ -60,6 +60,7 @@ fileprivate class Scope {
 public final class Resolver {
   enum FunctionType {
     case function
+    case method
     case none
   }
   
@@ -123,6 +124,8 @@ extension Resolver: ExpressionVisitor {
       case .setter(_, let object, _, let value):
         try visit(expression: value)
         try visit(expression: object)
+      case .this(_, let keyword):
+        resolve(expression: expression, localVariableName: keyword)
     }
   }
 }
@@ -153,7 +156,7 @@ extension Resolver: StatementVisitor {
         scopes.last?.define(variable: name)
         scopes.append(Scope())
         let from = currentFunction
-        currentFunction = .function
+        currentFunction = from == .none ? .function : from
         defer {
           currentFunction = from
           _ = scopes.popLast()
@@ -174,8 +177,8 @@ extension Resolver: StatementVisitor {
       case .print(let expr):
         try visit(expression: expr)
       case .returnStatement(let keyword, let value):
-        // 不能在非funciton的环境下return
-        guard currentFunction == .function else {
+        // 不能在非funciton或者method的环境下return
+        guard currentFunction == .function || currentFunction == .method else {
           throw ResolvingError.invalidReturn(token: keyword, message: "Can't return from top-level code.")
         }
         guard let value = value else {
@@ -185,9 +188,20 @@ extension Resolver: StatementVisitor {
       case .whileStatement(let condition, let body):
         try visit(expression: condition)
         try visit(statement: body)
-      case .classStatement(let name, _):
+      case .classStatement(let name, let methods):
         scopes.last?.declare(variable: name)
         scopes.last?.define(variable: name)
+        scopes.append(Scope())
+        let this = Token(type: .THIS, lexeme: "this", line: 1)
+        scopes.last?.declare(variable: this)
+        scopes.last?.define(variable: this)
+        defer {
+          _ = scopes.popLast()
+        }
+        for method in methods {
+          currentFunction = .method
+          try visit(statement: method)
+        }
     }
   }
 }

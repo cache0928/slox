@@ -341,7 +341,7 @@ public struct Parser {
   
   /// 主表达式
   ///
-  ///     primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER
+  ///     primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER | THIS
   private mutating func primary() throws -> Expression {
     if match(types: .FALSE) {
       return .literal(value: false)
@@ -351,6 +351,9 @@ public struct Parser {
     }
     if match(types: .NIL) {
       return .literal(value: nil)
+    }
+    if match(types: .THIS) {
+      return .this(keyword: previousToken!)
     }
     if match(types: .IDENTIFIER) {
       return .variable(name: previousToken!)

@@ -9,9 +9,11 @@ import Foundation
 
 class Class {
   let name: String
+  var methods: [String: Function]
   
-  init(name: String) {
+  init(name: String, methods: [String: Function]) {
     self.name = name
+    self.methods = methods
   }
 }
 

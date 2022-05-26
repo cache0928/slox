@@ -414,5 +414,31 @@ class InterpreterTests: XCTestCase {
     let prop = Token(type: .IDENTIFIER, lexeme: "prop", line: 1)
     XCTAssertEqual(try! interpreter.visit(expression: .variable(name: prop)), ExpressionValue.intValue(raw: 1))
   }
+  
+  func testCallMethod() {
+    let code = """
+               class A {
+                 method() { return "result"; }
+               }
+               var result = A().method();
+               """
+    try! interpreter.interpret(code: code)
+    let prop = Token(type: .IDENTIFIER, lexeme: "result", line: 1)
+    XCTAssertEqual(try! interpreter.visit(expression: .variable(name: prop)), ExpressionValue.stringValue(raw: "result"))
+  }
+  
+  func testCallMethodWithThis() {
+    let code = """
+               class A {
+                 method() { return this.name; }
+               }
+               var a = A();
+               a.name = "my name";
+               var result = a.method();
+               """
+    try! interpreter.interpret(code: code)
+    let prop = Token(type: .IDENTIFIER, lexeme: "result", line: 1)
+    XCTAssertEqual(try! interpreter.visit(expression: .variable(name: prop)), ExpressionValue.stringValue(raw: "my name"))
+  }
 
 }
