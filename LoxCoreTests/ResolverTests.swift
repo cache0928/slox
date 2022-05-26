@@ -155,4 +155,22 @@ class ResolverTests: XCTestCase {
     XCTAssertThrowsError(try resolver.resolve(statements: statements))
   }
   
+  func testInvalidSuper() {
+    var code = """
+               var a = 1;
+               super.method();
+               """
+    var statements = self.statements(from: code)
+    XCTAssertThrowsError(try resolver.resolve(statements: statements))
+    code = """
+           class A {
+             method() {
+               super.method();
+             }
+           }
+           """
+    statements = self.statements(from: code)
+    XCTAssertThrowsError(try resolver.resolve(statements: statements))
+  }
+  
 }

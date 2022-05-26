@@ -60,8 +60,8 @@ fileprivate class Scope {
 public final class Resolver {
   enum FunctionType {
     case function
-    case method
-    case initializer
+    case method(hasSuper: Bool)
+    case initializer(hasSuper: Bool)
     case none
   }
   
@@ -126,10 +126,23 @@ extension Resolver: ExpressionVisitor {
         try visit(expression: value)
         try visit(expression: object)
       case .this(_, let keyword):
-        guard currentFunction == .method || currentFunction == .initializer else {
-          throw ResolvingError.invalidThis(token: keyword, message: "Can't use 'this' outside of a class.")
+        switch currentFunction {
+          case .initializer(_), .method(_):
+            resolve(expression: expression, localVariableName: keyword)
+          default:
+            throw ResolvingError.invalidThis(token: keyword, message: "Can't use 'this' outside of a class.")
         }
-        resolve(expression: expression, localVariableName: keyword)
+      case .super(_, let keyword, _):
+        switch currentFunction {
+          case .method(let hasSuper) where hasSuper,
+               .initializer(let hasSuper) where hasSuper:
+            resolve(expression: expression, localVariableName: keyword)
+          case .method(let hasSuper) where !hasSuper,
+               .initializer(let hasSuper) where !hasSuper:
+            throw ResolvingError.invalidSuper(token: keyword, message: "Can't use 'super' in a class with no superclass.")
+          default:
+            throw ResolvingError.invalidSuper(token: keyword, message: "Can't use 'super' outside of a class.")
+        }
     }
   }
 }
@@ -160,7 +173,12 @@ extension Resolver: StatementVisitor {
         scopes.last?.define(variable: name)
         scopes.append(Scope())
         let from = currentFunction
-        currentFunction = from == .none ? .function : from
+        switch from {
+          case .none:
+            currentFunction = .function
+          default:
+            break
+        }
         defer {
           currentFunction = from
           _ = scopes.popLast()
@@ -181,34 +199,48 @@ extension Resolver: StatementVisitor {
       case .print(let expr):
         try visit(expression: expr)
       case .returnStatement(let keyword, let value):
-        // 构造器中不能return
-        guard currentFunction != .initializer else {
-          throw ResolvingError.invalidReturn(token: keyword, message: "Can't return from an initializer.")
+        switch currentFunction {
+          case .initializer(_):
+            // 构造器中不能return
+            throw ResolvingError.invalidReturn(token: keyword, message: "Can't return from an initializer.")
+          case .function, .method(_):
+            guard let value = value else {
+              return
+            }
+            try visit(expression: value)
+          default:
+            // 不能在非funciton或者method的环境下return
+            throw ResolvingError.invalidReturn(token: keyword, message: "Can't return from top-level code.")
         }
-        // 不能在非funciton或者method的环境下return
-        guard currentFunction == .function || currentFunction == .method else {
-          throw ResolvingError.invalidReturn(token: keyword, message: "Can't return from top-level code.")
-        }
-        guard let value = value else {
-          return
-        }
-        try visit(expression: value)
       case .whileStatement(let condition, let body):
         try visit(expression: condition)
         try visit(statement: body)
-      case .classStatement(let name, let methods):
+      case .classStatement(let name, let superclass, let methods):
         scopes.last?.declare(variable: name)
         scopes.last?.define(variable: name)
+        if case let .variable(_, superName) = superclass {
+          guard superName.lexeme != name.lexeme else {
+            throw ResolvingError.invalidInherit(token: superName, message: "A class can't inherit from itself.")
+          }
+          try visit(expression: superclass!)
+          scopes.append(Scope())
+          let `super` = Token(type: .SUPER, lexeme: "super", line: 1)
+          scopes.last?.declare(variable: `super`)
+          scopes.last?.define(variable: `super`)
+        }
         scopes.append(Scope())
         let this = Token(type: .THIS, lexeme: "this", line: 1)
         scopes.last?.declare(variable: this)
         scopes.last?.define(variable: this)
         defer {
           _ = scopes.popLast()
+          if case .variable = superclass {
+            _ = scopes.popLast()
+          }
         }
         for method in methods {
           if case let .functionDeclaration(name, _, _) = method {
-            currentFunction = name.lexeme == "init" ? .initializer : .method
+            currentFunction = name.lexeme == "init" ? .initializer(hasSuper: superclass != nil) : .method(hasSuper: superclass != nil)
           }
           try visit(statement: method)
         }

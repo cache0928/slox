@@ -24,7 +24,7 @@ class ScanTests: XCTestCase {
   }
   
   func testSingleCharTokenType() {
-    let singleChars = ["(", ")", "{", "}", ",", ".", "-", "+", ";", "*"]
+    let singleChars = ["(", ")", "{", "}", ",", ".", "-", "+", ";", "*", ":"]
     for char in singleChars {
       let result = try! getScanResult(source: char)
       XCTAssertEqual(TokenType(rawValue: char)!, result.first?.type)

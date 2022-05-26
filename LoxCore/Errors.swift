@@ -39,7 +39,9 @@ public enum ParseError: Error, CustomStringConvertible {
   case expectRightBrace(token: Token, message: String? = nil)
   case tooManyArguments(token: Token, message: String? = nil)
   case expectClassName(token: Token)
-  case expectPropertyName(token: Token)
+  case expectPropertyName(token: Token, message: String? = nil)
+  case expectSuperclassName(token: Token)
+  case expectDot(token: Token, message: String)
   
   public var description: String {
     switch self {
@@ -63,8 +65,12 @@ public enum ParseError: Error, CustomStringConvertible {
         return "\(basicInfo(token: token)) \(message ?? "Can't have more than 255 arguments.")"
       case .expectClassName(let token):
         return "\(basicInfo(token: token)) Expect class name."
-      case .expectPropertyName(let token):
-        return "\(basicInfo(token: token)) Expect property name after '.'."
+      case .expectPropertyName(let token, let message):
+        return "\(basicInfo(token: token)) \(message ?? "Expect property name after '.'.")"
+      case .expectSuperclassName(let token):
+        return "\(basicInfo(token: token)) Expect superclass name after ':'."
+      case .expectDot(let token, let message):
+        return "\(basicInfo(token: token)) \(message)"
     }
   }
 }
@@ -99,6 +105,9 @@ public enum ResolvingError: Error, CustomStringConvertible {
   case variableRedeclaration(token: Token)
   case invalidReturn(token: Token, message: String)
   case invalidThis(token: Token, message: String)
+  case invalidSuper(token: Token, message: String)
+
+  case invalidInherit(token: Token, message: String)
   case warning(token: Token, message: String)
   
   public var description: String {
@@ -107,9 +116,10 @@ public enum ResolvingError: Error, CustomStringConvertible {
         return "\(basicInfo(token: token)) Can't read local variable in its own initializer."
       case .variableRedeclaration(let token):
         return "\(basicInfo(token: token)) Already a variable with this name in this scope."
-      case .invalidReturn(let token, let message):
-        return "\(basicInfo(token: token)) \(message)"
-      case .invalidThis(let token, let message):
+      case .invalidReturn(let token, let message),
+           .invalidThis(let token, let message),
+           .invalidInherit(let token, let message),
+          .invalidSuper(let token, let message):
         return "\(basicInfo(token: token)) \(message)"
       case .warning(let token, let message):
         return "[line \(token.line)] Warning \(token.type == .EOF ? "at end" : "at '\(token.lexeme)'"): \(message)"

@@ -12,7 +12,7 @@ final class Environment: CustomStringConvertible {
   private let enclosing: Environment?
   
   var description: String {
-    return "\(values)"
+    return "{\(values), enclosing: \(enclosing?.description ?? "nil")}"
   }
   
   init(enclosing: Environment? = nil) {

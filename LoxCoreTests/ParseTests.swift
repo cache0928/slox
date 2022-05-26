@@ -212,11 +212,15 @@ class ParseTests: XCTestCase {
   }
   
   func testParseClassDeclaration() {
-    let code = "class A { method() {} }"
+    let code = "class A: B { method() {} }"
     var scanner = Scanner(source: code)
     var parser = Parser(tokens: try! scanner.scanTokens())
-    if case let .classStatement(name, methods) = try! parser.statement() {
+    if case let .classStatement(name, superclass, methods) = try! parser.statement(),
+       case let .variable(_, superName) = superclass {
+      XCTAssertEqual(superName.type, .IDENTIFIER)
+      XCTAssertEqual(superName.lexeme, "B")
       XCTAssertEqual(name.type, .IDENTIFIER)
+      XCTAssertEqual(name.lexeme, "A")
       XCTAssertTrue(methods.count == 1)
     } else {
       XCTFail()

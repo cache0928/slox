@@ -18,6 +18,7 @@ public indirect enum Expression {
   case getter(key: UUID = UUID(), object: Expression, propertyName: Token)
   case setter(key: UUID = UUID(), object: Expression, propertyName: Token, value: Expression)
   case this(key: UUID = UUID(), keyword: Token)
+  case `super`(key: UUID = UUID(), keyword: Token, method: Token)
 }
 
 extension Expression: CustomStringConvertible {
@@ -45,6 +46,8 @@ extension Expression: CustomStringConvertible {
         return "(set \(object).\(propertyName.lexeme) = \(value))"
       case .this(_, _):
         return "(this)"
+      case .super(_, _, let method):
+        return "(super \(method))"
         
     }
   }
@@ -63,7 +66,8 @@ extension Expression: Hashable {
        .call(let key, _, _, _),
        .getter(let key, _, _),
        .setter(let key, _, _, _),
-       .this(let key, _):
+       .this(let key, _),
+       .super(let key, _, _):
         return key
     }
   }

@@ -459,5 +459,93 @@ class InterpreterTests: XCTestCase {
     XCTAssertEqual(try! interpreter.visit(expression: .variable(name: name)), ExpressionValue.stringValue(raw: "linda"))
     XCTAssertEqual(try! interpreter.visit(expression: .variable(name: age)), ExpressionValue.intValue(raw: 20))
   }
+  
+  func testCallInheritMethod() {
+    let code = """
+               class Person {
+                 init(name, age) {
+                   this.name = name;
+                   this.age = age;
+                 }
+                 speak() {
+                   return "my name is " + this.name;
+                 }
+               }
+               class Student: Person {
+               
+               }
+               var linda = Student("linda", 20);
+               var speak = linda.speak();
+               """
+    try! interpreter.interpret(code: code)
+    let speak = Token(type: .IDENTIFIER, lexeme: "speak", line: 1)
+    XCTAssertEqual(try! interpreter.visit(expression: .variable(name: speak)), ExpressionValue.stringValue(raw: "my name is linda"))
+  }
+  
+  func testCallInheritMethodWithSuper() throws {
+    let code = """
+               class Animal {
+                 voice() {
+                   return "voice";
+                 }
+               }
+               class Person: Animal {
+                 speak() {
+                   return super.voice();
+                 }
+               }
+               class Student: Person {
+                 talk() {
+                   return super.speak();
+                 }
+               }
+               class Child: Student {
+                 cry() {
+                   return super.talk();
+                 }
+               }
+               var linda = Child();
+               var cry = linda.cry();
+               """
+    try interpreter.interpret(code: code)
+    let cry = Token(type: .IDENTIFIER, lexeme: "cry", line: 1)
+    XCTAssertEqual(try! interpreter.visit(expression: .variable(name: cry)), ExpressionValue.stringValue(raw: "voice"))
+  }
+  
+  func testClassSuperInitializer() {
+    let code = """
+               class Animal {
+                 init(id) {
+                   this.id = id;
+                 }
+               }
+               class Person: Animal {
+                 init(id, name, age) {
+                   super.init(id);
+                   this.name = name;
+                   this.age = age;
+                 }
+               }
+               class Student: Person {
+                 init(id, name, age, grade) {
+                   super.init(id, name, age);
+                   this.grade = grade;
+                 }
+               }
+               var linda = Student(1, "linda", 20, 99);
+               var age = linda.age;
+               var name = linda.name;
+               var grade = linda.grade;
+               """
+    try! interpreter.interpret(code: code)
+    let name = Token(type: .IDENTIFIER, lexeme: "name", line: 1)
+    let age = Token(type: .IDENTIFIER, lexeme: "age", line: 1)
+    let grade = Token(type: .IDENTIFIER, lexeme: "grade", line: 1)
+
+    XCTAssertEqual(try! interpreter.visit(expression: .variable(name: name)), ExpressionValue.stringValue(raw: "linda"))
+    XCTAssertEqual(try! interpreter.visit(expression: .variable(name: age)), ExpressionValue.intValue(raw: 20))
+    XCTAssertEqual(try! interpreter.visit(expression: .variable(name: grade)), ExpressionValue.intValue(raw: 99))
+
+  }
 
 }

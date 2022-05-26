@@ -30,7 +30,7 @@ struct Function: Callable {
   
   @discardableResult
   func dynamicallyCall(withArguments args: [ExpressionValue]) throws -> ExpressionValue {
-    return try underly(args, closure)
+    return try underly(args, self.closure)
   }
 }
 
@@ -38,7 +38,7 @@ extension Function {
   func bind(variable name: String, value: ExpressionValue) -> Function {
     let newEnv = Environment(enclosing: closure)
     newEnv.define(variableName: name, value: value)
-    return Function(name: name,
+    return Function(name: self.name,
                     paramNames: paramNames,
                     closure: newEnv,
                     call: underly)

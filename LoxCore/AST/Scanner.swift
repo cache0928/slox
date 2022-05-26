@@ -35,7 +35,7 @@ public struct Scanner {
       return
     }
     switch c {
-      case "(",")","{","}",",",".","-","+",";","*": addToken(type: TokenType(rawValue: String(c))!)
+      case "(",")","{","}",",",".","-","+",";","*", ":": addToken(type: TokenType(rawValue: String(c))!)
       case "!": addToken(type: match(expected: "=") ? TokenType(rawValue: "!=")! : TokenType(rawValue: "!")!)
       case "=": addToken(type: match(expected: "=") ? TokenType(rawValue: "==")! : TokenType(rawValue: "=")!)
       case "<": addToken(type: match(expected: "=") ? TokenType(rawValue: "<=")! : TokenType(rawValue: "<")!)

@@ -145,8 +145,6 @@
 		C90620BF2823BDD7003BC427 /* Statement */ = {
 			isa = PBXGroup;
 			children = (
-				C933E250283609F4007B25B4 /* Function */,
-				C933E261283E035E007B25B4 /* Class */,
 				C90620C22823C090003BC427 /* Statement.swift */,
 				C933E2462834DD50007B25B4 /* StatementVisitor.swift */,
 			);
@@ -220,6 +218,7 @@
 				C933E2482834DFEF007B25B4 /* Expression */,
 				C90620BF2823BDD7003BC427 /* Statement */,
 				C9EBEE5A281F793500CD3F3F /* Parser.swift */,
+				C933E254283883A3007B25B4 /* Resolver.swift */,
 			);
 			path = AST;
 			sourceTree = "<group>";
@@ -231,6 +230,16 @@
 				C933E264283E0508007B25B4 /* Instance.swift */,
 			);
 			path = Class;
+			sourceTree = "<group>";
+		};
+		C933E266283F60C7007B25B4 /* Runtime */ = {
+			isa = PBXGroup;
+			children = (
+				C90620C8282CF99B003BC427 /* Environment.swift */,
+				C933E250283609F4007B25B4 /* Function */,
+				C933E261283E035E007B25B4 /* Class */,
+			);
+			path = Runtime;
 			sourceTree = "<group>";
 		};
 		C9EFD96D280D516D0032F484 /* Frameworks */ = {
@@ -245,9 +254,8 @@
 			children = (
 				C9EFD9C0280D657C0032F484 /* Errors.swift */,
 				C9EBEE6528222FA900CD3F3F /* Interpreter.swift */,
-				C933E254283883A3007B25B4 /* Resolver.swift */,
-				C90620C8282CF99B003BC427 /* Environment.swift */,
 				C933E25128360A46007B25B4 /* AST */,
+				C933E266283F60C7007B25B4 /* Runtime */,
 				C9EFD9C2280FEF060032F484 /* Utils */,
 				C9EFD99C280D53B50032F484 /* LoxCore.h */,
 			);

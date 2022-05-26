@@ -109,13 +109,18 @@ public struct Parser {
   /// class定义
   private mutating func classStatement() throws -> Statement {
     let name = try attemp(consume: .IDENTIFIER, else: ParseError.expectClassName(token: currentToken))
+    var superclass: Expression? = nil
+    if match(types: .COLON) {
+      let token = try attemp(consume: .IDENTIFIER, else: ParseError.expectSuperclassName(token: currentToken))
+      superclass = .variable(name: token)
+    }
     try attemp(consume: .LEFT_BRACE, else: ParseError.expectLeftBrace(token: currentToken, message: "Expect '{' before class body."))
     var methods: [Statement] = []
     while !isAtEnd && !check(type: .RIGHT_BRACE) {
       methods.append(try callableDeclarationStatement(description: "method"))
     }
     try attemp(consume: .RIGHT_BRACE, else: ParseError.expectRightBrace(token: currentToken, message: "Expect '}' after class body."))
-    return .classStatement(name: name, methods: methods)
+    return .classStatement(name: name, superclass: superclass, methods: methods)
   }
   
   /// 表达式语句
@@ -341,7 +346,7 @@ public struct Parser {
   
   /// 主表达式
   ///
-  ///     primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER | THIS
+  ///     primary        → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER | THIS | "super" "." IDENTIFIER
   private mutating func primary() throws -> Expression {
     if match(types: .FALSE) {
       return .literal(value: false)
@@ -351,6 +356,12 @@ public struct Parser {
     }
     if match(types: .NIL) {
       return .literal(value: nil)
+    }
+    if match(types: .SUPER) {
+      let keyword = previousToken!
+      try attemp(consume: .DOT, else: ParseError.expectDot(token: currentToken, message: "Expect '.' after 'super'."))
+      let method = try attemp(consume: .IDENTIFIER, else: ParseError.expectPropertyName(token: currentToken, message: "Expect superclass method name."))
+      return .super(keyword: keyword, method: method)
     }
     if match(types: .THIS) {
       return .this(keyword: previousToken!)

@@ -20,8 +20,15 @@ class Instance {
     get {
       if let filed = fileds[member] {
         return filed
-      } else if let method = isa.methods[member] {
-        return .anyValue(raw: method.bind(variable: "this", value: .anyValue(raw: self)))
+      } else if let method = isa.find(method: member) {
+        var realMethod = method
+        // 注入super
+        if let superclass = isa.superclass {
+          realMethod = realMethod.bind(variable: "super", value: .anyValue(raw: superclass))
+        }
+        // 注入this
+        realMethod = realMethod.bind(variable: "this", value: .anyValue(raw: self))
+        return .anyValue(raw: realMethod)
       } else {
         return nil
       }

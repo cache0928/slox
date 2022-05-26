@@ -8,7 +8,7 @@
 import Foundation
 import OrderedCollections
 
-public final class Interpreter  {
+public final class Interpreter {
   private var environmentStack: [Environment] = [Environment()]
   // 读取变量表达式和赋值表达式涉及的变量所在的environment距离当前environment的距离
   private var bindings: OrderedDictionary<Expression, Int> = [:]
@@ -124,7 +124,15 @@ extension Interpreter: StatementVisitor {
         }
         let value = try visit(expression: expr)
         throw ReturnValue.value(value)
-      case .classStatement(let name, let methods):
+      case .classStatement(let name, let superclass, let methods):
+        var `super`: Class? = nil
+        if case let .variable(_, superName) = superclass {
+          guard case let .anyValue(raw) = try visit(expression: superclass!),
+                let klass = raw as? Class else {
+            throw RuntimeError.operandError(token: superName, message: "Superclass must be a class.")
+          }
+          `super` = klass
+        }
         var methodMap: [String: Function] = [:]
         var initializer: Function? = nil
         for member in methods {
@@ -137,7 +145,10 @@ extension Interpreter: StatementVisitor {
             }
           }
         }
-        let loxClass = Class(name: name.lexeme, methods: methodMap, initializer: initializer)
+        let loxClass = Class(name: name.lexeme,
+                             methods: methodMap,
+                             initializer: initializer,
+                             superclass: `super`)
         currentEnvironment.define(variableName: name.lexeme, value: .anyValue(raw: loxClass))
     }
   }
@@ -221,7 +232,26 @@ extension Interpreter: ExpressionVisitor {
         let value = try visit(expression: value)
         instance[dynamicMember: propertyName.lexeme] = value
         return value
-        
+      case .super(_, let keyword, let method):
+        let distance = bindings[expression]!
+        if case let .anyValue(raw) = try currentEnvironment.get(variable: keyword, at: distance),
+           let superclass = raw as? Class {
+          let superMethod = method.lexeme == "init" ? superclass.initializer : superclass.find(method: method.lexeme)
+          guard let superMethod = superMethod  else {
+            throw RuntimeError.undefinedProperty(token: method)
+          }
+          // 例如super.test()调用的时候，也要如果test方法中也有用到this，那么该this就是引用super的方法所属的对象本身，所以要注入this
+          // 注入super同理
+          var realMethod = superMethod
+          if let grandclass = superclass.superclass {
+            realMethod = realMethod.bind(variable: "super", value: .anyValue(raw: grandclass))
+          }
+          let this = try currentEnvironment.get(variable: Token(type: .THIS, lexeme: "this", line: 1),
+                                                at: distance - 1)
+          realMethod = realMethod.bind(variable: "this", value: this)
+          return .anyValue(raw: realMethod)
+        }
+        fatalError("can't reach here")
     }
   }
   

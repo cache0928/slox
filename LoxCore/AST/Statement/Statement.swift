@@ -30,11 +30,11 @@ public indirect enum Statement {
   case block(statements: [Statement])
   /// if语句
   ///
-  ///     ifStmt         → "if" "(" expression ")" statement ( "else" statement )?
+  ///     ifStmt         → "if" "(" expression ")" block ( "else" block )?
   case ifStatement(condition: Expression, thenBranch: Statement, elseBranch: Statement?)
   /// while语句
   ///
-  ///     whileStmt      → "while" "(" expression ")" statement
+  ///     whileStmt      → "while" "(" expression ")" block
   case whileStatement(condition: Expression, body: Statement)
   /// 函数定义语句
   ///
@@ -46,6 +46,6 @@ public indirect enum Statement {
   case returnStatement(keyword: Token, value: Expression? = nil)
   /// class定义语句
   ///
-  ///     classDecl      → "class" IDENTIFIER "{" function* "}"
-  case classStatement(name: Token, methods: [Statement])
+  ///     classDecl      → "class" IDENTIFIER ( ":" IDENTIFIER )? "{" function* "}"
+  case classStatement(name: Token, superclass: Expression?, methods: [Statement])
 }
