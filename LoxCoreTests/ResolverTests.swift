@@ -129,4 +129,21 @@ class ResolverTests: XCTestCase {
     XCTAssertEqual(bindings.values.elements, [0, 1, 1])
   }
   
+  func testInvalidThis() {
+    var code = """
+               var a = 1;
+               this.a = 2;
+               """
+    var statements = statements(from: code)
+    XCTAssertThrowsError(try resolver.resolve(statements: statements))
+    code = """
+           var a = 1;
+           fun test(a, b) {
+             return this + a;
+           }
+           """
+    statements = self.statements(from: code)
+    XCTAssertThrowsError(try resolver.resolve(statements: statements))
+  }
+  
 }

@@ -125,6 +125,9 @@ extension Resolver: ExpressionVisitor {
         try visit(expression: value)
         try visit(expression: object)
       case .this(_, let keyword):
+        guard currentFunction == .method else {
+          throw ResolvingError.invalidThis(token: keyword, message: "Can't use 'this' outside of a class.")
+        }
         resolve(expression: expression, localVariableName: keyword)
     }
   }
