@@ -6,6 +6,8 @@
 
 编程原理是计算机科学中举足轻重的一部分，动手做应该是学习某项知识最重要的环节。
 
+**UPDATE** 2022/05/27 已经完成本书PART II
+
 ## 实现
 
 我会尽量**参照书中所示的Java代码结构来实现**
@@ -45,11 +47,11 @@
   - [x] Challenge 3: Extend the resolver to report an error if a local variable is never used.
   - [ ] Challenge 4: Store local variables in an array and look them up by index.
   
-- [ ] 12. [**Classes**](http://www.craftinginterpreters.com/classes.html)
+- [x] 12. [**Classes**](http://www.craftinginterpreters.com/classes.html)
   - [ ] Challenge 1: Add class methods.
   - [ ] Challenge 2: Support getter methods.
   
-- [ ] 13. [**Inheritance**](http://www.craftinginterpreters.com/inheritance.html)
+- [x] 13. [**Inheritance**](http://www.craftinginterpreters.com/inheritance.html)
   - [ ] Challenge 1: Multiple inheritance. *Nothing to implement...?*
   - [ ] Challenge 2: Reverse method lookup order in class hierarchy.
 
