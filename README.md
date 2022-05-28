@@ -4,15 +4,13 @@
 
 **Lox**是一门迷你编程语言，来自于[Bob Nystrom](https://twitter.com/munificentbob)写的编译器教程[Crafting Interpreters](http://www.craftinginterpreters.com)
 
-编程原理是计算机科学中举足轻重的一部分，动手做应该是学习某项知识最重要的环节。
-
 **UPDATE** 2022/05/27 已经完成本书PART II
 
 ## 实现
 
-我会尽量**参照书中所示的Java代码结构来实现**
+会尽量**参照书中PART II所示的Java代码结构来实现**
 
-但是Swift本身有太多优秀和新奇的特点，比如`guard`、`Optional`、`POP`等，我也会使用这些Swift独占特性，但整体的结构和逻辑应该和书本上的并无太大差异
+但是Swift本身有太多优秀和新奇的特点，比如`enum`、`Optional`、`POP`等，我也会使用这些Swift独占特性，但整体的结构和逻辑应该和书本上的并无太大差异
 
 ### To-Do
 
